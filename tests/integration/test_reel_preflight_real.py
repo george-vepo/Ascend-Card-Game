@@ -1,4 +1,4 @@
-"""Reel preflight: somente consulta, sem inventar arena nem mover criaturas."""
+"""Reel sem posicionamento: preflight puro e execução da Action sem movimento."""
 import copy
 import os
 import sys
@@ -57,13 +57,15 @@ class ReelPreflight(unittest.TestCase):
         self.assertEqual(x["distancia_maxima_ft"],30)
         self.assertFalse(x["executavel"])
 
-    def test_02_grapple_confirmado_mas_arena_pendente(self):
+    def test_02_grapple_confirmado_dispensa_arena(self):
         self._agarrar_e_retornar_turno()
         x=self.s.motor.prevalidar_reel()
-        self.assertEqual(x["estado"],"PENDENTE_ARENA")
+        self.assertEqual(x["estado"],"PRONTO_SEM_POSICIONAMENTO")
+        self.assertTrue(x["executavel"])
         self.assertEqual(x["alvos"][0]["carta_id"],"CE-001")
         self.assertEqual(x["alvos"][0]["tentaculo_numero"],2)
-        self.assertIn("direcao_reta_para_roper",x["dados_necessarios"])
+        self.assertEqual(x["dados_necessarios"],[])
+        self.assertFalse(x["efeito_espacial_aplicado"])
         self.assertFalse(x["consome_acao"])
 
     def test_03_prevalidacao_pura(self):
@@ -76,12 +78,15 @@ class ReelPreflight(unittest.TestCase):
         self.assertEqual(len(self.s.motor.events),events)
         self.assertEqual(self.s.motor.head_hash,chain)
 
-    def test_04_declaracao_reel_pendente_sem_mutacao(self):
+    def test_04_reel_resolve_action_sem_deslocamento(self):
         self._agarrar_e_retornar_turno()
         before=copy.deepcopy(self.s.motor.state)
-        r=self.cmd("J2","REEL_ROPER_TESTE")
-        self.assertEqual(r["decisao"],"PENDENTE",r)
-        self.assertEqual(self.s.motor.state,before)
+        r=self.cmd("J2","REEL_ROPER_TESTE",{"arena_homologada":False})
+        self.assertEqual(r["decisao"],"ACEITA",r)
+        self.assertFalse(r["resultado"]["deslocamento_aplicado"])
+        self.assertEqual(r["resultado"]["acao"],"Reel")
+        self.assertEqual(self.s.motor.state["ator_da_vez"],"J1")
+        self.assertEqual(self.s.motor.state["jogadores"],before["jogadores"])
         self.assertEqual(self.s.motor.state["placar"],{"J1":0,"J2":0})
 
     def test_05_prevalidacao_fora_turno_inaplicavel(self):
