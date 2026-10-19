@@ -60,6 +60,45 @@ class MotorRoperBasico(MotorFichasPOC):
                 }):
             raise UnresolvedRule("vínculo entre tentáculo, efeito e alvo divergente")
 
+    def validate(self, s=None):
+        """Impede deixar Grappled/Poisoned e tentáculos órfãos entre combates."""
+        result=super().validate(s)
+        estado=self.state if s is None else s
+        if estado["fase"] in ("POS_COMBATE","ENCERRADA"):
+            combat=estado["combate"]
+            if combat.get("tentaculos_roper") or combat.get("tentaculos_destruidos"):
+                raise InvalidAction("tentáculos não podem persistir após KO")
+            for lado in SIDES:
+                for card in estado["jogadores"][lado]["cartas"].values():
+                    if any(e.get("tipo")=="ROPER_TENTACLE_GRAPPLE"
+                           for e in card["efeitos"]):
+                        raise InvalidAction("efeito de Grapple órfão após KO")
+        return result
+
+    def _ko(self, s, winner, source):
+        """No KO, desfaz vínculos desta fixture antes de mover a criatura.
+
+        Tanto a queda do Roper (fonte incapacitada) quanto a da Owl
+        terminam o confronto; não manter um alvo agarrado sem combate.
+        """
+        if s["fase"]!="COMBATE":
+            raise InvalidAction("limpeza do Roper só é válida em combate")
+        self._perfis(s)  # Confere ficha/estado de tentáculos antes do encerramento.
+        combat=s["combate"]
+        ativos=sorted(int(k) for k in combat.get("tentaculos_roper",{}))
+        if len(ativos)>1:
+            raise UnresolvedRule("múltiplos tentáculos não implementados neste recorte")
+        if ativos:
+            self._libertar_tentaculo(s,ativos[0])
+        destruidos=sorted(int(k) for k in combat.get("tentaculos_destruidos",{}))
+        combat.pop("tentaculos_destruidos",None)
+        MotorFichasPOC._ko(self,s,winner,source)
+        return {
+            "tentaculos_soltos":ativos,
+            "tentaculos_destruidos_encerrados":destruidos,
+            "condicoes_removidas":(["Grappled","Poisoned"] if ativos else []),
+        }
+
     def _proximo_turno(self, estado, actor):
         combate = estado["combate"]
         if combate["ordem_turnos"][combate["indice_turno"]] != actor:
@@ -132,9 +171,16 @@ class MotorRoperBasico(MotorFichasPOC):
                     or not 1<=entry["pv_atual"]<=regra["tentaculo"]["pv"]
                     or entry.get("pv_max")!=regra["tentaculo"]["pv"]):
                 raise UnresolvedRule("tentáculo ocupado sem PV/fonte verificáveis")
-        for key,entry in estado["combate"].get("tentaculos_destruidos",{}).items():
-            if (key in slots or not isinstance(entry,dict)
-                    or entry.get("sha256_documento")!=ref):
+        destruidos=estado["combate"].get("tentaculos_destruidos",{})
+        if not isinstance(destruidos,dict):
+            raise UnresolvedRule("registro de destruição deve ser um mapa")
+        for key,entry in destruidos.items():
+            if (type(key) is not str or not key.isdigit()
+                    or not 1<=int(key)<=regra["quantidade_tentaculos"]
+                    or str(int(key))!=key or key in slots
+                    or not isinstance(entry,dict)
+                    or set(entry)!={"sha256_documento"}
+                    or entry["sha256_documento"]!=ref):
                 raise UnresolvedRule("registro de tentáculo destruído inconsistente")
         if slots:
             card= self.get_card(estado,"J1","CE-001")
@@ -324,7 +370,8 @@ class MotorRoperBasico(MotorFichasPOC):
                 "dados_simulados": True, "mecanica_parcial": True,
             }
             if victim["pv_atual"] == 0:
-                self._ko(s, actor, "FIXTURE_SRD_ATAQUE_INDIVIDUAL")
+                encerramento=self._ko(s, actor, "FIXTURE_SRD_ATAQUE_INDIVIDUAL")
+                result["encerramento_tentaculos"]=encerramento
                 result["ko"] = True
                 result["pontuacao_fixture"] = copy.deepcopy(s["placar"])
             else:
