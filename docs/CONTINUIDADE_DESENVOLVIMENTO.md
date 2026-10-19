@@ -38,9 +38,11 @@
 
 **No recorte experimental:** Bite e Tentacle individuais, Grappled/Poisoned, fuga com desvantagem Poisoned, ataque e destruição/regeneração de tentáculos, limpeza de vínculos em KO e preflight puro de Reel e Multiattack. Todos exigem fontes verificadas e não são combate SRD integral.
 
-**PENDENTE:** Reel com deslocamento, Multiattack executável, múltiplos tentáculos sobre o mesmo alvo, Spider Climb e movimentação/vôo/arena. **Decisão administrativa aberta:** [Issue #19 — arena, posicionamento e Reel/Multiattack](https://github.com/george-vepo/Ascend-Card-Game/issues/19). Não presumir aprovação por ter aberto o issue.
+**DECISÃO JÁ VIGENTE DESDE 15/10/2026, RATIFICADA EM 19/10/2026:** nenhum combate usa posição, arena, distância ou checagem de alcance espacial. Ver contrato `docs/poc/01_Regras/CONTRATO_DE_REGRAS.md` e [Issue #19 encerrada](https://github.com/george-vepo/Ascend-Card-Game/issues/19). A ausência de arena jamais bloqueia uma ação. A branch `fix/roper-sem-posicionamento-poc` corrige verificações espaciais no motor experimental, habilitando Reel individual como Action sem deslocamento; confirmar CI e merge antes de tratar como integrado.
 
-**Próximo incremento seguro:** aguardar decisão do Issue #19 para implementar Reel real; enquanto isso, apenas adicionar validação pura e testes para componentes independentes, sem modificar estado de partidas ou assumir posições. Não recriar o que já está integrado.
+**PENDENTE:** Multiattack executável (segunda Tentacle no mesmo alvo, sequência completa como uma Action), Spider Climb e demais componentes SRD ainda não suportados. O deslocamento posicional/vôo/arena **não será implementado**; efeitos não espaciais dessas habilidades exigem ficha e contrato verificáveis.
+
+**Próximo incremento seguro:** corrigir e integrar com CI as chamadas que exigiam `alvo_no_alcance_fixture` ou arena indevidamente. Em seguida, implementar Multiattack por etapas verificadas com testes e economia de uma Action, sem arena e sem criar mecânicas de movimento. Não recriar o que já está integrado.
 
 **Partida oficial:** não iniciada. **Placar oficial:** J1 0 × 0 J2. **Rolagens em CI:** simuladas, externas e explícitas. Não publicar mãos, decks privados, ordem de montes nem snapshots de estado competitivo real.
 

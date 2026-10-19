@@ -132,17 +132,15 @@ class RoperTentacleFixture(unittest.TestCase):
         self.assertTrue(r["resultado"]["acertou"])
         self.assertEqual(r["resultado"]["total_ataque"],12)
 
-    def test_09_alcance_ausente_pendente(self):
-        old=copy.deepcopy(self.s.motor.state)
+    def test_09_alcance_ausente_nao_bloqueia(self):
         r=self.tentacle(reach=None)
-        self.assertEqual(r["decisao"],"PENDENTE",r)
-        self.assertEqual(self.s.motor.state,old)
+        self.assertEqual(r["decisao"],"ACEITA",r)
+        self.assertIn("Grappled",self.owl()["condicoes"])
 
-    def test_10_alcance_falso_rejeita(self):
-        old=copy.deepcopy(self.s.motor.state)
+    def test_10_alcance_falso_e_ignorado(self):
         r=self.tentacle(reach=False)
-        self.assertEqual(r["decisao"],"REJEITADA")
-        self.assertEqual(self.s.motor.state,old)
+        self.assertEqual(r["decisao"],"ACEITA",r)
+        self.assertIn("Poisoned",self.owl()["condicoes"])
 
     def test_11_slot_zero_rejeita(self):
         self.assertEqual(self.tentacle(slot=0)["decisao"],"REJEITADA")
@@ -201,13 +199,14 @@ class RoperTentacleFixture(unittest.TestCase):
         self.assertEqual(r["resultado"]["dano_aplicado"],10)
         self.assertEqual(self.owl()["pv_atual"],9)
 
-    def test_22_reel_aguarda_posicionamento_sem_mutar(self):
+    def test_22_reel_ignora_posicionamento_e_consume_action(self):
         self.tentacle();self.owl_attack([19,4],[])
         old=copy.deepcopy(self.s.motor.state)
         r=self.run_cmd("J2","REEL_ROPER_TESTE",{})
-        self.assertEqual(r["decisao"],"PENDENTE",r)
-        self.assertIn("arena",r["motivo"])
-        self.assertEqual(self.s.motor.state,old)
+        self.assertEqual(r["decisao"],"ACEITA",r)
+        self.assertFalse(r["resultado"]["deslocamento_aplicado"])
+        self.assertEqual(self.s.motor.state["ator_da_vez"],"J1")
+        self.assertEqual(self.s.motor.state["jogadores"],old["jogadores"])
 
     def test_23_multiattack_permanece_pendente(self):
         old=copy.deepcopy(self.s.motor.state)

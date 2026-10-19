@@ -3,7 +3,7 @@
 NÃO é combate SRD completo: Reel, Multiattack, Spider Climb, Flyby,
 movimento, recursos e magias continuam sem resolução neste recorte.
 Somente cópias com ficha verificada no Catálogo SRD pinado.
-Dados e alcance são informados externamente em fixtures, sem RNG.
+Dados são simulados e explícitos em fixtures, sem RNG; o jogo não usa posições ou alcance espacial.
 """
 from __future__ import annotations
 
@@ -211,11 +211,10 @@ class MotorRoperBasico(MotorFichasPOC):
         return type(valor) is int and 1 <= valor <= faces
 
     def prevalidar_reel(self) -> dict:
-        """Consulta pública e sem mutação; NÃO executa deslocamento nem ação.
+        """Consulta pública e sem mutação da mecânica Reel.
 
-        Valida a fonte mecânica e a ligação do tentáculo ao Grappled.
-        O jogo não possui arena/posição aprovada: mesmo com alvo válido
-        o deslocamento permanece PENDENTE até decisão administrativa.
+        A regra vigente da POC elimina movimento e posição espacial.
+        Com Grappled válido, Reel é uma Action sem deslocamento nem dano.
         """
         s = self.state
         result = {
@@ -246,28 +245,25 @@ class MotorRoperBasico(MotorFichasPOC):
                 or data.get("origem_id") != "AB-POC-017"
                 or data.get("alvo_id") != "CE-001"):
             raise UnresolvedRule("tentáculo e alvo inválidos para Reel")
-        result["estado"] = "PENDENTE_ARENA"
+        result["estado"] = "PRONTO_SEM_POSICIONAMENTO"
+        result["executavel"] = True
         result["alvos"] = [{
             "carta_id": "CE-001",
             "tentaculo_numero": int(slot),
             "condicoes": ["Grappled", "Poisoned"],
         }]
-        result["dados_necessarios"] = [
-            "posicao_origem_aprovada", "posicao_alvo_aprovada",
-            "direcao_reta_para_roper", "distancia_permitida_pela_arena",
-        ]
-        result["lacuna"] = (
-            "Posicionamento e deslocamento de Reel exigem decisão "
-            "do administrador; a POC não possui arena regulamentada"
-        )
+        result["dados_necessarios"] = []
+        result["efeito_espacial_aplicado"] = False
+        result["regra_poc"] = "SEM_POSICIONAMENTO_15_10_2026"
+        result["lacuna"] = None
         return result
 
     def prevalidar_multiattack(self) -> dict:
         """Consulta SRD em ordem, sem executar ataques nem consumir Action.
 
         A ficha exige duas Tentacle, Reel e duas Bite na mesma Action.
-        Reel não tem arena homologada; o recorte atual não combina vários
-        tentáculos ou verificações de alcance ao longo da composição.
+        A POC ignora alcance espacial; continuam pendentes as múltiplas
+        Tentacle em um alvo e a composição na economia de uma Action.
         """
         s = self.state
         result = {
@@ -286,17 +282,15 @@ class MotorRoperBasico(MotorFichasPOC):
         result["etapas"] = copy.deepcopy(multi["etapas"])
         result["origem_ficha_sha256"] = multi["sha256_documento"]
         result["tipo_acao_fonte"] = multi["tipo_acao"]
-        result["estado"] = "PENDENTE_COMPONENTES_E_ARENA"
+        result["estado"] = "PENDENTE_COMPONENTES"
         result["bloqueios"] = [
             "segunda_Tentacle_e_alvo_ja_agarrado_sem_regra_integrada",
-            "Reel_requer_arena_e_posicionamento_aprovados",
-            "alcance_Bite_apos_Reel_nao_verificavel",
             "economia_de_acao_composta_nao_integrada",
         ]
         result["lacuna"] = (
             "Multiattack verificado na ficha, mas não executável: "
-            "duas Tentacle, Reel e duas Bite exigem arena, alvos, "
-            "sequência e economia de Action composta ainda não integradas"
+            "falta integrar segunda Tentacle no alvo e executar a sequência "
+            "completa como uma única Action; não existe alcance espacial na POC"
         )
         return result
 
@@ -345,11 +339,6 @@ class MotorRoperBasico(MotorFichasPOC):
             self._gate(s, "COMBATE", actor)
             if params.get("aceite_escopo") != ESCOPO_BASICO:
                 raise UnresolvedRule("escopo de ataque individual não confirmado")
-            reach = params.get("alvo_no_alcance_fixture")
-            if type(reach) is not bool:
-                raise UnresolvedRule("alcance precisa de confirmação explícita")
-            if not reach:
-                raise InvalidAction("alvo fora de alcance confirmado")
             pair = self._perfis(s)
             own_id, own = pair[actor]
             defender = other(actor)
@@ -423,11 +412,6 @@ class MotorRoperBasico(MotorFichasPOC):
             self._gate(s,"COMBATE",actor)
             if params.get("aceite_escopo") != ESCOPO_BASICO:
                 raise UnresolvedRule("escopo parcial de Tentacle não confirmado")
-            reach=params.get("alvo_no_alcance_fixture")
-            if type(reach) is not bool:
-                raise UnresolvedRule("alcance 60 pés exige confirmação externa")
-            if not reach:
-                raise InvalidAction("Giant Owl fora do alcance informado")
             pair=self._perfis(s)
             source=pair["J2"][1]["tentaculo"]
             slot=params.get("tentaculo_numero")
@@ -456,7 +440,7 @@ class MotorRoperBasico(MotorFichasPOC):
                 "dano_aplicado":0,"dados_simulados":True,
                 "alcance_ft":source["alcance_ft"],
                 "ficha_sha256":source["sha256_documento"],
-                "mecanica_parcial":True,"reel_pendente":True,
+                "mecanica_parcial":True,"reel_pendente":False,
             }
             if acerto:
                 owl["condicoes"]=["Grappled","Poisoned"]
@@ -536,11 +520,6 @@ class MotorRoperBasico(MotorFichasPOC):
             self._gate(s,"COMBATE",actor)
             if params.get("aceite_escopo")!=ESCOPO_BASICO:
                 raise UnresolvedRule("confirmar escopo de ataque ao tentáculo")
-            reach=params.get("alvo_no_alcance_fixture")
-            if type(reach) is not bool:
-                raise UnresolvedRule("alcance da coruja ao tentáculo requer confirmação")
-            if not reach:
-                raise InvalidAction("tentáculo fora do alcance declarado")
             pair=self._perfis(s)
             regra=pair["J2"][1]["tentaculo"]
             slot=params.get("tentaculo_numero")
@@ -606,10 +585,19 @@ class MotorRoperBasico(MotorFichasPOC):
             diagnostico=self.prevalidar_reel()
             if diagnostico["estado"] == "SEM_ALVO_AGARRADO":
                 raise UnresolvedRule("Reel exige alvo Grappled documentado")
-            raise UnresolvedRule(
-                diagnostico["lacuna"] or
-                "Reel sem pré-requisitos resolvidos pela POC"
-            )
+            if diagnostico["estado"] != "PRONTO_SEM_POSICIONAMENTO":
+                raise UnresolvedRule("Reel sem pré-requisitos não espaciais resolvidos")
+            # Reel não causa deslocamento nesta POC, mas usa uma Action.
+            # Não modifica Grappled/Poisoned, PV, zonas ou alcance de Bite.
+            return {
+                "acao": "Reel",
+                "alvos_agarrados": copy.deepcopy(diagnostico["alvos"]),
+                "deslocamento_aplicado": False,
+                "regra_poc": "SEM_POSICIONAMENTO_15_10_2026",
+                "dados_simulados": False,
+                "mecanica_parcial": True,
+                **self._proximo_turno(s, actor),
+            }
         if command == "MULTIATTACK_ROPER_TESTE":
             if actor != "J2":
                 raise InvalidAction("Multiattack pertence ao Roper do J2")

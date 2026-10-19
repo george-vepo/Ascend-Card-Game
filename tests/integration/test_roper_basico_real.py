@@ -146,14 +146,17 @@ class RoperFixture(unittest.TestCase):
         self.prepare()
         self.assertEqual(self.attack("J2",True,[1,1,1])["decisao"],"REJEITADA")
 
-    def test_14_alcance_nao_informado_pendente(self):
-        self.prepare();before=copy.deepcopy(self.s.motor.state)
-        self.assertEqual(self.attack(range_ok=None)["decisao"],"PENDENTE")
-        self.assertEqual(self.s.motor.state,before)
-
-    def test_15_alvo_fora_de_alcance_rejeita(self):
+    def test_14_alcance_nao_informado_nao_bloqueia(self):
         self.prepare()
-        self.assertEqual(self.attack(range_ok=False)["decisao"],"REJEITADA")
+        r=self.attack(range_ok=None)
+        self.assertEqual(r["decisao"],"ACEITA",r)
+        self.assertTrue(r["resultado"]["acertou"])
+
+    def test_15_indicacao_fora_de_alcance_e_ignorada(self):
+        self.prepare()
+        r=self.attack(range_ok=False)
+        self.assertEqual(r["decisao"],"ACEITA",r)
+        self.assertTrue(r["resultado"]["acertou"])
 
     def test_16_tentacle_nao_e_bite(self):
         self.prepare()

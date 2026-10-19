@@ -11,8 +11,8 @@ Base de desenvolvimento: `main` após PR #17, merge commit `a1c8cad2ff77fa7038e3
 
 ## Bloqueios conhecidos
 - O recorte atual não resolve dois tentáculos no mesmo alvo, incluindo o efeito da primeira aplicação de Grappled.
-- Reel exige geometria e movimentação homologadas pelo administrador; a pré-validação do PR #16 não autoriza sua execução.
-- Bite após Reel exige distância real e regra aprovada de arena.
+- **Superado pela regra vigente de 15/10/2026:** Reel não exige geometria, movimentação nem arena. O componente espacial não produz efeito no jogo; o efeito não espacial segue a ficha.
+- **Superado pela mesma regra:** Bite após Reel não depende de distância. Nenhum ataque calcula alcance espacial.
 - Execução de vários ataques e uso de Reel dentro de uma **única Action** ainda não existe; jamais tratá-los como cinco turnos independentes.
 
 ## Testes e checkpoint
@@ -22,4 +22,4 @@ Base de desenvolvimento: `main` após PR #17, merge commit `a1c8cad2ff77fa7038e3
 - Partida oficial **não iniciada**; placar oficial **0 × 0**. Rolagens de testes permanecem rotuladas como simuladas.
 
 ## Próximo passo
-Sem decisão administrativa de arena, continuar apenas componentes independentes, como reforçar testes de integridade ou contratos de ações. Antes de autorizar Multiattack, regulamentar arena/posições e implementar Reel e múltiplos ataques na economia de uma Action com testes de integração.
+**Atualização 19/10/2026:** a regra do contrato de 15/10 elimina posições, arena e alcance; Issue #19 encerrada. A pré-validação histórica deste documento era propositalmente bloqueada naquele incremento, mas o bloqueio espacial não é regra do jogo. Prosseguir com as duas Tentacle para alvo previamente agarrado e a composição de múltiplos ataques como uma Action, com testes. Não supor que o Multiattack já está executável.

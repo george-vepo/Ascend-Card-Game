@@ -205,16 +205,17 @@ class FugaRoperSRD(unittest.TestCase):
         self.assertEqual(r["decisao"],"REJEITADA")
         self.assertEqual(self.s.motor.state,before)
 
-    def test_18_fora_de_alcance_rejeita(self):
+    def test_18_fora_de_alcance_nao_bloqueia_ataque(self):
         self.tentacle()
-        self.assertEqual(self.hit_tentacle(reach=False)["decisao"],"REJEITADA")
+        r=self.hit_tentacle(reach=False)
+        self.assertEqual(r["decisao"],"ACEITA",r)
+        self.assertTrue(r["resultado"]["acertou"])
 
-    def test_19_alcance_nao_confirmado_pendente(self):
+    def test_19_alcance_ausente_nao_bloqueia_ataque(self):
         self.tentacle()
-        old=copy.deepcopy(self.s.motor.state)
         r=self.hit_tentacle(reach=None)
-        self.assertEqual(r["decisao"],"PENDENTE")
-        self.assertEqual(self.s.motor.state,old)
+        self.assertEqual(r["decisao"],"ACEITA",r)
+        self.assertTrue(r["resultado"]["acertou"])
 
     def test_20_nao_ataca_tentaculo_sem_grapple(self):
         self.tentacle()
@@ -252,13 +253,14 @@ class FugaRoperSRD(unittest.TestCase):
         self.assertNotIn("AB-POC-001",view)
         self.assertIn("Poisoned",view)
 
-    def test_25_reel_continua_pendente_sem_arena(self):
+    def test_25_reel_permitido_sem_arena(self):
         self.tentacle()
         self.escape(roll=1)
         prior=copy.deepcopy(self.s.motor.state)
         r=self.act("J2","REEL_ROPER_TESTE")
-        self.assertEqual(r["decisao"],"PENDENTE")
-        self.assertEqual(self.s.motor.state,prior)
+        self.assertEqual(r["decisao"],"ACEITA",r)
+        self.assertFalse(r["resultado"]["deslocamento_aplicado"])
+        self.assertEqual(self.s.motor.state["jogadores"],prior["jogadores"])
 
 if __name__=="__main__":
     unittest.main()
