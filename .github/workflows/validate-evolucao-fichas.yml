@@ -1,0 +1,46 @@
+name: Invocação e evolução — fichas SRD sob demanda
+on:
+  pull_request:
+    paths:
+      - 'experimental/integration/motor_fichas_poc.py'
+      - 'tests/evolucao/**'
+      - 'tests/integration/test_invocacao_evolucao_reais.py'
+      - '.github/workflows/validate-evolucao-fichas.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fixtures:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validar transações e checkpoints de fixture
+        run: python -m unittest discover -s tests/evolucao -v
+
+  fonte-real:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: george-vepo/Catalogo-SRD
+          ref: ba0f496895438ef683855a7d65df375503c313fd
+          path: external/Catalogo-SRD
+          persist-credentials: false
+          sparse-checkout: |
+            docs/catalogo/data/deck-celestial-40.json
+            docs/catalogo/data/deck-aberracao-40.json
+            operational/research/decks/aberracao-40-20261014/fichas_srd521_integral_3.json
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Conferir invocação e evolução com fichas reais e revisão pinada
+        env:
+          CATALOGO_SRD_DIR: external/Catalogo-SRD
+        run: python -m unittest discover -s tests/integration -p test_invocacao_evolucao_reais.py -v
