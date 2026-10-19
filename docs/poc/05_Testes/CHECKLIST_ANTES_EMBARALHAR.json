@@ -1,0 +1,89 @@
+{
+  "schema": "SRD_POC_VERIFICACAO_PRE_EMBARALHAMENTO_V2_1",
+  "status": "PREPARACAO_ESTRUTURAL_PERMITIDA_PARTIDA_NAO_INICIADA_SEM_EMBARALHAR",
+  "quantidades": {
+    "J1": {
+      "copias": 40,
+      "fichas_srd_com_texto_integral": 10,
+      "sem_srd_integral": 30,
+      "sem_CA_ou_PV": 0
+    },
+    "J2": {
+      "copias": 40,
+      "fichas_srd_com_texto_integral": 3,
+      "sem_srd_integral": 37,
+      "sem_CA_ou_PV": 5
+    }
+  },
+  "ids_poc_unicos_80": true,
+  "manifestos_conferidos": true,
+  "raridades_por_nd_verificadas": 80,
+  "suportes_individualmente_homologados": 0,
+  "srds_integrados_copias": 13,
+  "regras_em_aberto": [
+    "alteracao_suporte_antes_iniciativa",
+    "suporte_pre_batalha_gatilhos_efeitos"
+  ],
+  "rolagens": 0,
+  "embaralhamentos": 0,
+  "cartas_compradas": 0,
+  "partida_criada": false,
+  "fontes": [
+    "/SRD Card Game/Decks/Celestial/MANIFESTO.json",
+    "/SRD Card Game/Decks/Celestial/CONTROLE_CARTAS.csv",
+    "/SRD Card Game/Decks/Aberração/MANIFESTO.json",
+    "/SRD Card Game/Decks/Aberração/CONTROLE_CARTAS.csv",
+    "SRD_CC_v5.2.1.pdf"
+  ],
+  "aprovacoes_poc": {
+    "suporte_selecao_opcional_0_ou_1": true,
+    "ordem_primeiro_por_sorteio": true,
+    "suportes_resolvem_pre_batalha_antes_iniciativa": true,
+    "iniciativa_srd_separada_sorteio_preparacao": true,
+    "combate_ate_zero_pv_seguido_novo_ciclo": true,
+    "preservacao_estado_e_tres_pontos": true,
+    "prioridade_sorteio_unico_fixa_todos_ciclos": true,
+    "nova_iniciativa_srd_por_novo_combate": true,
+    "evolucoes_sem_teto_numerico_desde_que_legais": true,
+    "reposicao_automatica_apenas_apos_fim_do_combate": false,
+    "saque_ambos_inicio_da_rodada": true,
+    "fase_extra_de_saque_so_para_sobrevivente": false,
+    "saque_ambos_somente_inicio_novo_ciclo": true,
+    "Q17_momento_saque_resolvido": true,
+    "KO_por_suporte_pre_iniciativa_encerra_combate": true,
+    "segundo_suporte_nao_ativado_permanece_na_mao_sem_descarte": true,
+    "nao_rola_iniciativa_apos_KO_pre_iniciativa": true,
+    "proximo_ciclo_so_se_placar_menor_3": true
+  },
+  "regra_suporte_opcional": "Cada jogador pode confirmar Sem suporte, sem reservar, mover, comprar ou descartar carta; não ativa suporte no combate.",
+  "regra_suporte_ativacao_vigente": "Suporte selecionado 0/1 da mão resolve na preparação, primeiro e segundo, após ambas as escolhas e antes da iniciativa, não no turno de combate; exige ficha/efeito homologado.",
+  "observacao_seguinte": "POC-21: 80/80 arquivos de pesquisa individuais presentes. Priorizar execução estrutural; não interromper POC por homologação geral de fichas. Não há autorização para embaralhar/sortear/comprar ou resolver habilidade sem dados suficientes.",
+  "sorteio_prioridade_preparacao_executado": false,
+  "regra_fim_combates": "Mesma luta continua por rodadas/turnos até uma criatura atingir 0 PV; então +1 ponto, derrotada ao cemitério, sobrevivente preserva PV; novo ciclo de preparação se ninguém chegou a 3 pontos.",
+  "prioridade_preparacao": {
+    "primeiro": null,
+    "segundo": null,
+    "sorteio_realizado": false,
+    "sorteio_evento_id": null,
+    "ordem_fixa_ate_fim_do_duelo": true,
+    "novo_sorteio_em_novo_ciclo": false
+  },
+  "regra_evolucao_vigente": "Sucessivas evoluções na etapa da criatura sem limite numérico, exigindo carta da mão, mesmo tipo, raridade imediatamente superior, criatura antiga ao cemitério, nova no campo com PV máximos; sem compras intermediárias; reposição apenas pós-combate (Q-15 resolvida).",
+  "regra_reposicao_vigente": "POC-19: ao abrir novo ciclo de preparação após KO e somente se partida não encerrou em 3 pontos, repor simultaneamente como direito de ambos, compras individuais auditadas do topo até completar 5; antes da troca. No primeiro ciclo, mão inicial do setup substitui a reposição de abertura. Nunca no KO, nem a cada rodada interna, nem exclusiva para sobrevivente.",
+  "pendencias_KO_pre_iniciativa": [
+    "morte_simultanea_por_um_mesmo_efeito",
+    "suportes_individuais_nao_homologados"
+  ],
+  "presenca_fichas_arquivos": {
+    "J1_Celestial_arquivos": 40,
+    "J2_Aberracao_arquivos": 40,
+    "posicoes_ausentes": {
+      "J1": [],
+      "J2": []
+    },
+    "validacao_mecanica": "SOB_DEMANDA",
+    "fichas_em_processo_de_validacao_impedem_testes_estruturais": false,
+    "arquivo_presente_nao_equivale_a_ficha_integral": true
+  },
+  "politica_fichas": "Consultar arquivo já existente na hora de uma jogada concreta. Só procurar fontes se realmente não existir ficha ou informação essencial; pendência limita-se à operação afetada. Nunca inventar efeito."
+}
