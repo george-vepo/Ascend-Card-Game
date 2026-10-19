@@ -46,7 +46,7 @@ class CombateSRDComFontes(unittest.TestCase):
     def iniciativa(self):
         self.preparar()
         r=self.go("ARBITRO","INICIATIVA_SRD_TESTE",{"d20":{"J1":17,"J2":8}})
-        self.assertEqual(r["decisao"],"ACEITA")
+        self.assertEqual(r["decisao"],"ACEITA",r)
         self.assertEqual(self.s.motor.state["ator_da_vez"],"J1")
 
     def inicio_owl(self,near=False,roll=None,d8=None):
