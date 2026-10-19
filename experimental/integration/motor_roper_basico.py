@@ -14,7 +14,7 @@ from typing import Any, Mapping
 from ascend.catalogo_poc import CopiaReferencia
 from ascend.fichas_srd import consultar_ficha, FichaPendente, FichaConflitante
 from ascend.perfil_combate_srd import extrair_perfil_de_combate
-from ascend.tentaculo_roper_srd import extrair_tentaculo_roper
+from ascend.tentaculo_roper_srd import (extrair_tentaculo_roper, extrair_multiattack_roper)
 from ascend.fuga_roper_srd import extrair_testes_fuga_owl
 from ascend.testes_d20_srd import (
     resolver_teste_atributo, TesteD20Invalido, TesteD20Pendente,
@@ -141,6 +141,7 @@ class MotorRoperBasico(MotorFichasPOC):
                 perfil = extrair_perfil_de_combate(ficha)
                 if jogador == "J2":
                     perfil["tentaculo"] = extrair_tentaculo_roper(ficha)
+                    perfil["multiattack"] = extrair_multiattack_roper(ficha)
                 else:
                     perfil["testes_fuga"] = extrair_testes_fuga_owl(ficha)
             except (FichaPendente, FichaConflitante) as exc:
@@ -258,6 +259,44 @@ class MotorRoperBasico(MotorFichasPOC):
         result["lacuna"] = (
             "Posicionamento e deslocamento de Reel exigem decisão "
             "do administrador; a POC não possui arena regulamentada"
+        )
+        return result
+
+    def prevalidar_multiattack(self) -> dict:
+        """Consulta SRD em ordem, sem executar ataques nem consumir Action.
+
+        A ficha exige duas Tentacle, Reel e duas Bite na mesma Action.
+        Reel não tem arena homologada; o recorte atual não combina vários
+        tentáculos ou verificações de alcance ao longo da composição.
+        """
+        s = self.state
+        result = {
+            "acao": "MULTIATTACK_ROPER_TESTE",
+            "estado": "INAPLICAVEL",
+            "executavel": False,
+            "consome_acao": False,
+            "etapas": [],
+            "bloqueios": [],
+            "lacuna": None,
+        }
+        if s.get("fase") != "COMBATE" or s.get("ator_da_vez") != "J2":
+            return result
+        perfil = self._perfis(s)["J2"][1]
+        multi = perfil["multiattack"]
+        result["etapas"] = copy.deepcopy(multi["etapas"])
+        result["origem_ficha_sha256"] = multi["sha256_documento"]
+        result["tipo_acao_fonte"] = multi["tipo_acao"]
+        result["estado"] = "PENDENTE_COMPONENTES_E_ARENA"
+        result["bloqueios"] = [
+            "segunda_Tentacle_e_alvo_ja_agarrado_sem_regra_integrada",
+            "Reel_requer_arena_e_posicionamento_aprovados",
+            "alcance_Bite_apos_Reel_nao_verificavel",
+            "economia_de_acao_composta_nao_integrada",
+        ]
+        result["lacuna"] = (
+            "Multiattack verificado na ficha, mas não executável: "
+            "duas Tentacle, Reel e duas Bite exigem arena, alvos, "
+            "sequência e economia de Action composta ainda não integradas"
         )
         return result
 
@@ -571,10 +610,14 @@ class MotorRoperBasico(MotorFichasPOC):
                 diagnostico["lacuna"] or
                 "Reel sem pré-requisitos resolvidos pela POC"
             )
-        if command in {
-            "MULTIATTACK_ROPER_TESTE",
-            "SPIDER_CLIMB_ROPER_TESTE",
-        }:
+        if command == "MULTIATTACK_ROPER_TESTE":
+            if actor != "J2":
+                raise InvalidAction("Multiattack pertence ao Roper do J2")
+            self._gate(s, "COMBATE", actor)
+            diagnostico = self.prevalidar_multiattack()
+            raise UnresolvedRule(diagnostico["lacuna"])
+
+        if command == "SPIDER_CLIMB_ROPER_TESTE":
             raise UnresolvedRule(
                 "habilidade SRD documentada, ainda não implementada neste recorte"
             )

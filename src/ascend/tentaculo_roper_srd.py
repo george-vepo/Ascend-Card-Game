@@ -58,3 +58,39 @@ def extrair_tentaculo_roper(ficha: FichaConsultada) -> dict:
         "sha256_documento":ficha.sha256_documento,
         "origem_ficha":ficha.id_catalogo,
     }
+
+
+def extrair_multiattack_roper(ficha: FichaConsultada) -> dict:
+    """Confere a composição exata do Multiattack; não o torna executável.
+
+    O contrato é deliberadamente estrito para a fonte SRD 5.2.1 pinada:
+    alteração de qualquer componente requer nova revisão, não fallback.
+    """
+    if (ficha.id_copia != "AB-POC-017" or ficha.nome != "Roper"
+            or ficha.versao != "SRD 5.2.1"):
+        raise FichaConflitante("Multiattack exige ficha Roper SRD 5.2.1 verificada")
+    if ficha.ficha_integral.count("\nActions\n") != 1:
+        raise FichaConflitante("Actions ausente ou ambígua no Roper")
+    actions = " ".join(ficha.ficha_integral.split("\nActions\n", 1)[1].split())
+    occurrences = list(re.finditer(r"\bMultiattack\.", actions))
+    match = list(re.finditer(
+        r"\bMultiattack\.\s+The roper makes (two) Tentacle attacks,"
+        r"\s+uses Reel, and makes (two) Bite attacks\.", actions
+    ))
+    if len(occurrences) != 1 or len(match) != 1:
+        raise FichaConflitante(
+            "Multiattack: sequência/quantidades da ficha não verificáveis"
+        )
+    # Os números são aceitos apenas quando literalmente comprovados no texto.
+    return {
+        "nome": "Multiattack",
+        "etapas": [
+            {"ataque": "Tentacle", "quantidade": 2},
+            {"ataque": "Reel", "quantidade": 1},
+            {"ataque": "Bite", "quantidade": 2},
+        ],
+        "tipo_acao": "Action",
+        "executavel": False,
+        "sha256_documento": ficha.sha256_documento,
+        "origem_ficha": ficha.id_catalogo,
+    }
