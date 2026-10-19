@@ -35,6 +35,18 @@ class MotorCondicoesSRD(MotorCombateSRD):
     def _die(v,n):
         return type(v) is int and 1<=v<=n
 
+    def _regras_efeitos(self,s):
+        """Compatibilidade de testes legados v2.4; o Ascend sobrescreve
+        esta função e exige parâmetros extraídos das fichas SRD externas.
+        """
+        return {
+            'wis_bonus':4, 'dex_bonus':2,
+            'gibbering':{'dc':10,'range_ft':20,'d8_faces':8},
+            'spittle':{'dc':10,'radius_ft':10,'range_ft':30,
+                       'damage_dice':(2,6),'damage_type':'Radiant',
+                       'recharge_min':5,'recharge_max':6},
+        }
+
     def _ready(self,s,actor):
         self._gate(s,'COMBATE',actor)
         if s['combate']['iniciativas'].get('origem')!='DADOS_SIMULADOS_TESTE':
@@ -75,10 +87,12 @@ class MotorCondicoesSRD(MotorCombateSRD):
                     roll=params.get('wis_d20_simulado')
                     if not self._die(roll,20):raise InvalidAction('salvaguarda SAB precisa de d20 simulado')
                     # Giant Owl Wisdom save +4, explicitly SRD p.352
-                    total=roll+4;response['gibbering_sab']={'d20':roll,'bonus':4,'total':total,'cd':10,'sucesso':total>=10}
-                    if total<10:
+                    regras=self._regras_efeitos(s);bonus=regras['wis_bonus'];cd=regras['gibbering']['dc']
+                    total=roll+bonus
+                    response['gibbering_sab']={'d20':roll,'bonus':bonus,'total':total,'cd':cd,'sucesso':total>=cd,'alcance_gatilho_ft':regras['gibbering']['range_ft']}
+                    if total<cd:
                         d8=params.get('gibbering_d8_simulado')
-                        if not self._die(d8,8):raise InvalidAction('falha exige d8 simulado')
+                        if not self._die(d8,regras['gibbering']['d8_faces']):raise InvalidAction('falha exige d8 simulado')
                         if d8>=7:
                             raise UnresolvedRule('Gibbering 7-8: ataque aleatorio dentro do alcance nao homologado sem alvo/alcance')
                         v['bloqueado']=True
@@ -90,7 +104,8 @@ class MotorCondicoesSRD(MotorCombateSRD):
                 if not v['spittle_disponivel']:
                     roll=params.get('recarga_d6_simulado')
                     if not self._die(roll,6):raise InvalidAction('recarga 5-6 exige d6 simulado')
-                    v['spittle_disponivel']=roll>=5
+                    regras=self._regras_efeitos(s)
+                    v['spittle_disponivel']=(regras['spittle']['recharge_min']<=roll<=regras['spittle']['recharge_max'])
                     response['recarga_spittle']={'d6':roll,'recarregou':v['spittle_disponivel']}
                 elif 'recarga_d6_simulado' in params:
                     raise InvalidAction('nao rolar recarga com poder disponivel')
@@ -156,7 +171,8 @@ class MotorCondicoesSRD(MotorCombateSRD):
             if actor!='J2':raise InvalidAction('Blinding Spittle pertence ao Gibbering Mouther')
             if v['pendente_inicio'] or not v['inicio_resolvido'] or v['bloqueado']:
                 raise InvalidAction('nao e acao valida para este turno')
-            self._get_combat_pair(s)
+            members=self._get_combat_pair(s)
+            regras=self._regras_efeitos(s);spittle=regras['spittle']
             if params.get('aceite_escopo')!=self.SCOPE:
                 raise UnresolvedRule('escopo experimental nao confirmado')
             if not v['spittle_disponivel']:
@@ -166,20 +182,28 @@ class MotorCondicoesSRD(MotorCombateSRD):
                 raise UnresolvedRule('area/alvo da esfera requer confirmacao de fixture')
             victim=self.get_card(s,'J1','CE-001');before=victim['pv_atual']
             out={'acao':'Blinding Spittle','ator':'J2','alvo':'J1',
-                 'alvo_na_area_fixture':included,'dados_simulados':True,'cd_des':10}
+                 'alvo_na_area_fixture':included,'dados_simulados':True,
+                 'cd_des':spittle['dc'],
+                 'raio_esfera_ft':spittle['radius_ft'],
+                 'alcance_max_ft':spittle['range_ft']}
             if included:
                 roll=params.get('dex_d20_simulado')
                 if not self._die(roll,20):raise InvalidAction('salvaguarda DES exige d20 simulado')
-                total=roll+2 # Giant Owl DEX saving throw +2, SRD p.352.
-                out['salvaguarda_des']={'d20':roll,'bonus':2,'total':total,'sucesso':total>=10}
-                if total<10:
+                bonus=regras['dex_bonus'];total=roll+bonus
+                out['salvaguarda_des']={'d20':roll,'bonus':bonus,'total':total,'sucesso':total>=spittle['dc']}
+                if total<spittle['dc']:
                     dice=params.get('dano_d6_simulados')
-                    if not isinstance(dice,list) or len(dice)!=2 or not all(self._die(x,6) for x in dice):
+                    if (not isinstance(dice,list) or
+                            len(dice)!=spittle['damage_dice'][0] or
+                            not all(self._die(x,spittle['damage_dice'][1]) for x in dice)):
                         raise InvalidAction('falha exige 2d6 radiante simulados')
-                    raw=sum(dice);applied=raw//2  # Giant Owl resists Radiant.
+                    raw=sum(dice)
+                    resistiu=(spittle['damage_type'] in members['J1'][1]['resistances'])
+                    aplicado_imune=(spittle['damage_type'] in members['J1'][1]['immunities'])
+                    applied=(0 if aplicado_imune else raw//2 if resistiu else raw)
                     victim['pv_atual']=max(0,before-applied)
                     out.update({'dano_bruto':raw,'dano_aplicado':applied,'dados_dano':dice,
-                                'resistencia_radiante':True})
+                                'resistencia_radiante':resistiu,'tipo_dano':spittle['damage_type']})
                     if victim['pv_atual']>0:
                         if 'Blinded' not in victim['condicoes']:victim['condicoes'].append('Blinded')
                         # Spittle ends at end of next Mouther turn, not current one.

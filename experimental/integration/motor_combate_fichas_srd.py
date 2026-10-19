@@ -13,6 +13,7 @@ from typing import Mapping, Sequence, Any
 from ascend.catalogo_poc import CopiaReferencia
 from ascend.fichas_srd import consultar_ficha, FichaPendente, FichaConflitante
 from ascend.perfil_combate_srd import extrair_perfil_de_combate
+from ascend.efeitos_srd import extrair_salvaguardas_celestial, extrair_efeitos_gibbering
 from motor_fichas_poc import MotorFichasPOC, SessaoFichasFixture
 from motor_condicoes_srd import MotorCondicoesSRD
 from motor_poc import (
@@ -39,9 +40,9 @@ FRASES_OBRIGATORIAS = {
         "Medium Aberration",
         "Gibbering.",
         "7–8. The target makes a melee attack against a randomly determined creature within its reach",
-        "Wisdom Saving Throw: DC 10",
-        "Blinding Spittle (Recharge 5–6).",
-        "Dexterity Saving Throw: DC 10",
+        "Wisdom Saving Throw:",
+        "Blinding Spittle (Recharge",
+        "Dexterity Saving Throw:",
     ),
 }
 
@@ -87,6 +88,10 @@ class MotorCombateFichasSRD(MotorFichasPOC, MotorCondicoesSRD):
                 )
             try:
                 perfil = extrair_perfil_de_combate(ficha)
+                if cid == "CE-001":
+                    perfil["saving_throws"] = extrair_salvaguardas_celestial(ficha)
+                else:
+                    perfil["special_effects"] = extrair_efeitos_gibbering(ficha)
             except FichaConflitante as exc:
                 raise UnresolvedRule(
                     "perfil de combate não extraível do catálogo: " + str(exc)
@@ -97,6 +102,18 @@ class MotorCombateFichasSRD(MotorFichasPOC, MotorCondicoesSRD):
                 raise UnresolvedRule("efeito fora do recorte integrado")
             membros[jogador] = (cid, perfil)
         return membros
+
+    def _regras_efeitos(self, s):
+        """Somente as CDs, bônus e dados presentes nas duas fichas pinadas."""
+        membros = self._get_combat_pair(s)
+        saves = membros["J1"][1]["saving_throws"]
+        efeitos = membros["J2"][1]["special_effects"]
+        return {
+            "wis_bonus": saves["wis_bonus"],
+            "dex_bonus": saves["dex_bonus"],
+            "gibbering": efeitos["gibbering"],
+            "spittle": efeitos["spittle"],
+        }
 
     def _iniciar_gibbering_78(self, s, actor, params):
         """SRD 5.2.1, p.288: 7-8 força ataque em criatura no alcance.
@@ -115,7 +132,10 @@ class MotorCombateFichasSRD(MotorFichasPOC, MotorCondicoesSRD):
             raise InvalidAction("rolagem 7–8 exige gatilho Gibbering confirmado")
         wis = params.get("wis_d20_simulado")
         d8 = params.get("gibbering_d8_simulado")
-        if not self._die(wis, 20) or wis + 4 >= 10:
+        regras = self._regras_efeitos(s)
+        bonus = regras["wis_bonus"]
+        cd = regras["gibbering"]["dc"]
+        if not self._die(wis, 20) or wis + bonus >= cd:
             raise InvalidAction("resultado 7–8 requer falha real em SAB CD 10")
         if type(d8) is not int or d8 not in (7, 8):
             raise InvalidAction("somente resultados 7 e 8 deste evento")
@@ -137,8 +157,9 @@ class MotorCombateFichasSRD(MotorFichasPOC, MotorCondicoesSRD):
         return {
             "ator": "J1", "dados_simulados": True,
             "numero_turno_proprio": v["turnos_iniciados"]["J1"],
-            "gibbering_sab": {"d20": wis, "bonus": 4, "total": wis + 4,
-                              "cd": 10, "sucesso": False},
+            "gibbering_sab": {"d20": wis, "bonus": bonus, "total": wis + bonus,
+                              "cd": cd, "sucesso": False,
+                              "alcance_gatilho_ft": regras["gibbering"]["range_ft"]},
             "gibbering_resultado_d8": d8,
             "mouther_ao_alcance_fixture": ao_alcance,
             "acao_exigida": ("RESOLVER_ATAQUE_FORCADO_GIBBERING_TESTE"
