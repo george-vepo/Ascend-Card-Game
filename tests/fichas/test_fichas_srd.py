@@ -170,6 +170,11 @@ class TesteFichaSobDemanda(unittest.TestCase):
         with self.assertRaises(FichaConflitante):
             self.consulta()
 
+    def test_17b_licenca_abreviada_cc_by_40_valida(self):
+        self.item["licenca"] = "CC-BY-4.0"
+        self.escrever()
+        self.assertEqual(self.consulta().pv_maximos, 52)
+
     def test_18_editorial_desconhecida_bloqueia(self):
         self.item["editorial_review"] = "APROVADO_INVENTADO"
         self.escrever()

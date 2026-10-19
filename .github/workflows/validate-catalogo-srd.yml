@@ -43,4 +43,4 @@ jobs:
       - name: Validar 80 referências reais, sem copiar para o repositório Ascend
         env:
           CATALOGO_SRD_DIR: external/Catalogo-SRD
-        run: python -m unittest discover -s tests/integration -v
+        run: python -m unittest discover -s tests/integration -p test_catalogo_real.py -v

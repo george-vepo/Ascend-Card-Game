@@ -152,7 +152,11 @@ def consultar_ficha(
         raise FichaConflitante("Raridade incompatível com ND da carta")
     if versao != "SRD 5.2.1" or revisao_editorial != REVISAO_EDITORIAL:
         raise FichaConflitante("Versão ou situação editorial não reconhecida")
-    if "Creative Commons" not in _campo_string(item, "licenca"):
+    if _campo_string(item, "licenca") not in {
+        "CC-BY-4.0",
+        "Creative Commons Attribution 4.0",
+        "Creative Commons Attribution 4.0 International",
+    }:
         raise FichaConflitante("Atribuição/licença SRD ausente")
     # Não basta uma cifra solta: o próprio corpo precisa confirmar AC/HP.
     if (
