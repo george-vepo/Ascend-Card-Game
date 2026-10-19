@@ -12,6 +12,7 @@ from typing import Mapping, Sequence, Any
 
 from ascend.catalogo_poc import CopiaReferencia
 from ascend.fichas_srd import consultar_ficha, FichaPendente, FichaConflitante
+from ascend.perfil_combate_srd import extrair_perfil_de_combate
 from motor_fichas_poc import MotorFichasPOC, SessaoFichasFixture
 from motor_condicoes_srd import MotorCondicoesSRD
 from motor_poc import (
@@ -53,6 +54,7 @@ class MotorCombateFichasSRD(MotorFichasPOC, MotorCondicoesSRD):
     """Mesmo estado event-sourced do motor de preparo; combate parcial v2.4."""
 
     def _get_combat_pair(self, s):
+        membros = {}
         for jogador, cid in PARES.items():
             if s["jogadores"][jogador]["criatura_ativa_id"] != cid:
                 raise UnresolvedRule(
@@ -87,7 +89,18 @@ class MotorCombateFichasSRD(MotorFichasPOC, MotorCondicoesSRD):
                 raise UnresolvedRule(
                     "ação, resistência ou traço ausente na ficha consultada"
                 )
-        return super()._get_combat_pair(s)
+            try:
+                perfil = extrair_perfil_de_combate(ficha)
+            except FichaConflitante as exc:
+                raise UnresolvedRule(
+                    "perfil de combate não extraível do catálogo: " + str(exc)
+                ) from exc
+            if set(card["condicoes"]) - {"Blinded"}:
+                raise UnresolvedRule("condição fora do recorte integrado")
+            if any(e.get("tipo") != "BLINDED_SPITTLE" for e in card["efeitos"]):
+                raise UnresolvedRule("efeito fora do recorte integrado")
+            membros[jogador] = (cid, perfil)
+        return membros
 
     def _iniciar_gibbering_78(self, s, actor, params):
         """SRD 5.2.1, p.288: 7-8 força ataque em criatura no alcance.
