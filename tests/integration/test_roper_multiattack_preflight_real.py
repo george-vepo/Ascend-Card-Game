@@ -106,14 +106,16 @@ class MultiattackRoperPreflight(unittest.TestCase):
 
     def test_04_preflight_completo_mas_nao_executavel(self):
         x = self.s.motor.prevalidar_multiattack()
-        self.assertEqual(x["estado"], "PENDENTE_COMPONENTES_E_ARENA")
+        self.assertEqual(x["estado"], "PENDENTE_COMPONENTES")
         self.assertFalse(x["executavel"])
         self.assertFalse(x["consome_acao"])
         self.assertEqual([s["ataque"] for s in x["etapas"]],
                          ["Tentacle", "Reel", "Bite"])
         self.assertEqual([s["quantidade"] for s in x["etapas"]], [2, 1, 2])
-        self.assertIn("Reel_requer_arena_e_posicionamento_aprovados",
+        self.assertIn("economia_de_acao_composta_nao_integrada",
                       x["bloqueios"])
+        self.assertNotIn("Reel_requer_arena_e_posicionamento_aprovados",
+                         x["bloqueios"])
         self.assertNotIn("d20_simulado", x)
 
     def test_05_prevalidacao_repetida_e_pura(self):
@@ -133,7 +135,7 @@ class MultiattackRoperPreflight(unittest.TestCase):
         self.assertEqual(before, self.s.motor.state)
         self.assertEqual(self.s.motor.state["placar"], {"J1": 0, "J2": 0})
 
-    def test_07_parametros_falsos_nao_burlam_arena(self):
+    def test_07_parametros_espaciais_nao_burlam_componentes(self):
         before = copy.deepcopy(self.s.motor.state)
         r = self.cmd("J2", "MULTIATTACK_ROPER_TESTE", {
             "arena_homologada": True,
@@ -161,7 +163,7 @@ class MultiattackRoperPreflight(unittest.TestCase):
     def test_10_alvo_agarrado_ainda_nao_habilita_multiattack(self):
         self.return_roper_turn()
         x = self.s.motor.prevalidar_multiattack()
-        self.assertEqual(x["estado"], "PENDENTE_COMPONENTES_E_ARENA")
+        self.assertEqual(x["estado"], "PENDENTE_COMPONENTES")
         self.assertFalse(x["executavel"])
         self.assertIn("Grappled",
                       self.s.motor.get_card(
