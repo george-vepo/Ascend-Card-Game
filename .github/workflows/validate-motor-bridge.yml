@@ -1,0 +1,45 @@
+name: Ponte de identidades Catálogo SRD → motor experimental
+on:
+  pull_request:
+    paths:
+      - 'experimental/integration/**'
+      - 'tests/bridge/**'
+      - 'tests/integration/test_motor_catalogo_real.py'
+      - '.github/workflows/validate-motor-bridge.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sintetic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Testes de ponte sem cartas ou imagens
+        run: python -m unittest discover -s tests/bridge -v
+
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: george-vepo/Catalogo-SRD
+          ref: ba0f496895438ef683855a7d65df375503c313fd
+          path: external/Catalogo-SRD
+          persist-credentials: false
+          sparse-checkout: |
+            docs/catalogo/data/deck-celestial-40.json
+            docs/catalogo/data/deck-aberracao-40.json
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Conferir 80 cópias do catálogo em fixture, sem PV
+        env:
+          CATALOGO_SRD_DIR: external/Catalogo-SRD
+        run: python -m unittest discover -s tests/integration -p test_motor_catalogo_real.py -v
