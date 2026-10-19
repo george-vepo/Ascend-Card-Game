@@ -7,6 +7,9 @@ on:
       - "src/ascend/tentaculo_roper_srd.py"
       - "tests/integration/test_roper_tentacle_real.py"
       - "src/ascend/fuga_roper_srd.py"
+      - "src/ascend/testes_d20_srd.py"
+      - "tests/rolagens/**"
+      - "tests/integration/test_poisoned_escape_roper_real.py"
       - "tests/integration/test_fuga_tentaculo_roper_real.py"
       - "tests/integration/test_roper_basico_real.py"
       - ".github/workflows/validate-roper-basico.yml"
@@ -42,3 +45,5 @@ jobs:
           python -m unittest discover -s tests/integration -p test_roper_basico_real.py -v
           python -m unittest discover -s tests/integration -p test_roper_tentacle_real.py -v
           python -m unittest discover -s tests/integration -p test_fuga_tentaculo_roper_real.py -v
+          python -m unittest discover -s tests/rolagens -v
+          python -m unittest discover -s tests/integration -p test_poisoned_escape_roper_real.py -v
