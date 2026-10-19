@@ -463,5 +463,65 @@ class TestGibbering78(unittest.TestCase):
         self.assertFalse(owl_atual["efeitos"])
         self.assertEqual(self.s.motor.state["placar"],{"J1":0,"J2":0})
 
+    def test_38_condicao_tem_fonte_e_turno_em_registro_generico(self):
+        self._preparar_turno_do_mouther()
+        self.ok("J2","BLINDING_SPITTLE_V24_TESTE",{
+            "aceite_escopo":ESCOPO, "alvo_na_area_fixture":True,
+            "dex_d20_simulado":1, "dano_d6_simulados":[2,2],
+        })
+        card=self.s.motor.get_card(self.s.motor.state,"J1","CE-001")
+        efeito=card["efeitos"][0]
+        self.assertEqual(efeito["tipo"],"BLINDED_SPITTLE")
+        self.assertEqual(efeito["condicao"],"Blinded")
+        self.assertEqual(efeito["fonte"],"AB-POC-008")
+        self.assertEqual(efeito["expira_ao_fim_turno_fonte"],2)
+        self.assertEqual(card["condicoes"],["Blinded"])
+
+    def test_39_recarga_expõe_fonte_e_nao_reexecuta_sem_dado(self):
+        self._preparar_turno_do_mouther()
+        self.ok("J2","BLINDING_SPITTLE_V24_TESTE",{
+            "aceite_escopo":ESCOPO,"alvo_na_area_fixture":False,
+        })
+        self._passar_turno_owl_com_ataque()
+        estado=copy.deepcopy(self.s.motor.state)
+        resp=self.cmd("J2","INICIO_TURNO_V24_TESTE",{
+            "aceite_escopo":ESCOPO,
+        })
+        self.assertEqual(resp["decisao"],"PENDENTE",resp)
+        self.assertEqual(self.s.motor.state,estado)
+        ok=self.ok("J2","INICIO_TURNO_V24_TESTE",{
+            "aceite_escopo":ESCOPO,"recarga_d6_simulado":5,
+        })
+        self.assertEqual(ok["resultado"]["recarga_spittle"]["fonte"],
+                         "AB-POC-008")
+        self.assertTrue(ok["resultado"]["recarga_spittle"]["recarregou"])
+
+    def test_40_checkpoint_preserva_novos_metadados_de_condicao(self):
+        self._preparar_turno_do_mouther()
+        self.ok("J2","BLINDING_SPITTLE_V24_TESTE",{
+            "aceite_escopo":ESCOPO,"alvo_na_area_fixture":True,
+            "dex_d20_simulado":1,"dano_d6_simulados":[1,2],
+        })
+        checkpoint=self.s.checkpoint()
+        r=SessaoCombateFichasFixture.restaurar(
+            checkpoint,os.environ["CATALOGO_SRD_DIR"],ler_contrato(ROOT),
+        )
+        self.assertEqual(r.motor.state,self.s.motor.state)
+        self.assertIn("Blinded",r.motor.get_card(
+            r.motor.state,"J1","CE-001")["condicoes"])
+        self.assertEqual(r.motor.public(),self.s.motor.public())
+
+    def test_41_recurso_nao_pode_ser_usado_duas_vezes_no_mesmo_turno(self):
+        self._preparar_turno_do_mouther()
+        self.ok("J2","BLINDING_SPITTLE_V24_TESTE",{
+            "aceite_escopo":ESCOPO,"alvo_na_area_fixture":False,
+        })
+        estado=copy.deepcopy(self.s.motor.state)
+        resp=self.cmd("J2","BLINDING_SPITTLE_V24_TESTE",{
+            "aceite_escopo":ESCOPO,"alvo_na_area_fixture":False,
+        })
+        self.assertEqual(resp["decisao"],"REJEITADA",resp)
+        self.assertEqual(self.s.motor.state,estado)
+
 if __name__=="__main__":
     unittest.main()
