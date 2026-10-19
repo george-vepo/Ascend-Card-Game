@@ -1,4 +1,4 @@
-"""Perfis de ataque do recorte Giant Owl × Gibbering Mouther (SRD 5.2.1).
+"""Perfis estritos dos ataques individuais Giant Owl, Gibbering Mouther e Roper (SRD 5.2.1).
 
 Extrai dados DA FICHA CONSULTADA em vez de um dicionário fixo de
 atributos. Só reconhece a ação corpo a corpo já implementada pelo motor.
@@ -12,10 +12,12 @@ from ascend.fichas_srd import FichaConsultada, FichaConflitante
 ATAQUES_HOMOLOGADOS_PARA_TESTE = {
     "CE-001": "Talons",
     "AB-POC-008": "Bite",
+    "AB-POC-017": "Bite",
 }
 LIMITACOES_POC = {
     "CE-001": ["Flyby, movimento e magias não integrados"],
     "AB-POC-008": ["Aberrant Ground, movimento e alvos múltiplos não integrados"],
+    "AB-POC-017": ["Tentacle, Reel, Spider Climb e Multiattack não integrados; apenas Bite isolado"],
 }
 _NUM = r"([+−-]?\d+)"
 
@@ -34,7 +36,7 @@ def _unico(padrao: str, texto: str, etiqueta: str, flags: int = 0):
 
 
 def extrair_perfil_de_combate(ficha: FichaConsultada) -> dict:
-    """Somente perfil dos dois ataques do recorte; não reconhece magia ou suporte.
+    """Somente ações corpo a corpo listadas; não reconhece magias, tentáculos ou suportes.
 
     A consulta de ficha anterior já checou versão, ID, ND, CA, PV e hash.
     """
