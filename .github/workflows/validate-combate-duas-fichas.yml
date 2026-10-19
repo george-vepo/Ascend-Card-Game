@@ -3,6 +3,10 @@ on:
   pull_request:
     paths:
       - "experimental/integration/motor_combate_fichas_srd.py"
+      - "src/ascend/efeitos_srd.py"
+      - "experimental/legacy/src/motor_condicoes_srd.py"
+      - "tests/efeitos/**"
+      - "tests/integration/test_efeitos_reais.py"
       - "tests/integration/test_combate_duas_fichas_reais.py"
       - ".github/workflows/validate-combate-duas-fichas.yml"
       - "src/ascend/fichas_srd.py"
@@ -40,3 +44,5 @@ jobs:
           python -m unittest discover -s tests/integration -p test_combate_duas_fichas_reais.py -v
           python -m unittest discover -s tests/integration -p test_gibbering_78_real.py -v
           python -m unittest discover -s tests/perfil -v
+          python -m unittest discover -s tests/efeitos -v
+          python -m unittest discover -s tests/integration -p test_efeitos_reais.py -v
