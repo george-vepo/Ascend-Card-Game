@@ -14,6 +14,10 @@ from ascend.catalogo_poc import CopiaReferencia
 from ascend.fichas_srd import consultar_ficha, FichaPendente, FichaConflitante
 from ascend.perfil_combate_srd import extrair_perfil_de_combate
 from ascend.efeitos_srd import extrair_salvaguardas_celestial, extrair_efeitos_gibbering
+from ascend.ciclo_efeitos import (
+    consumir_recurso, verificar_recarga, registrar_condicao, expirar_efeitos,
+    CicloInvalido, CicloPendente,
+)
 from motor_fichas_poc import MotorFichasPOC, SessaoFichasFixture
 from motor_condicoes_srd import MotorCondicoesSRD
 from motor_poc import (
@@ -114,6 +118,88 @@ class MotorCombateFichasSRD(MotorFichasPOC, MotorCondicoesSRD):
             "gibbering": efeitos["gibbering"],
             "spittle": efeitos["spittle"],
         }
+
+    def _aplicar_recarga_spittle(self,s,dado,presente):
+        v=s["combate"]["v24"]
+        regras=self._regras_efeitos(s)["spittle"]
+        try:
+            if presente and dado is None:
+                raise CicloInvalido("recarga fornecida sem valor d6")
+            novo, evidencia=verificar_recarga(
+                v["spittle_disponivel"],dado,faces=6,
+                minimo=regras["recharge_min"],maximo=regras["recharge_max"],
+            )
+        except CicloPendente as exc:
+            raise UnresolvedRule(str(exc)) from exc
+        except CicloInvalido as exc:
+            raise InvalidAction(str(exc)) from exc
+        v["spittle_disponivel"]=novo
+        if evidencia is None:
+            return None
+        return {
+            "d6":evidencia["dado"],
+            "recarregou":evidencia["recarregou"],
+            "fonte":self._get_combat_pair(s)["J2"][0],
+            "dados_simulados":True,
+        }
+
+    def _consumir_spittle(self,s):
+        try:
+            s["combate"]["v24"]["spittle_disponivel"]=consumir_recurso(
+                s["combate"]["v24"]["spittle_disponivel"]
+            )
+        except CicloInvalido as exc:
+            raise InvalidAction(str(exc)) from exc
+
+    def _aplicar_blinded_spittle(self,s,v,victim,out):
+        # Uma aplicação/renovação só é registrada se a salvaguarda falhou
+        # e se a criatura sobreviveu. A fonte é uma identidade de cópia.
+        fonte=self._get_combat_pair(s)["J2"][0]
+        expira=v["turnos_iniciados"]["J2"]+1
+        try:
+            condicoes,efeitos=registrar_condicao(
+                victim["condicoes"],victim["efeitos"],
+                marcador="BLINDED_SPITTLE",condicao="Blinded",
+                fonte=fonte,expira_no_turno_fonte=expira,
+                mapeamento={"BLINDED_SPITTLE":"Blinded"},
+            )
+        except CicloPendente as exc:
+            raise UnresolvedRule(str(exc)) from exc
+        except CicloInvalido as exc:
+            raise InvalidAction(str(exc)) from exc
+        victim["condicoes"]=condicoes
+        victim["efeitos"]=efeitos
+        out["blinded_ate_fim_turno_mouther"]=expira
+
+    def _expirar_condicoes_fonte(self,s,actor):
+        if actor!="J2":
+            return []
+        fonte=self._get_combat_pair(s)["J2"][0]
+        turno=s["combate"]["v24"]["turnos_iniciados"][actor]
+        expiradas=[]
+        # A mesma API suporta outros campos/efeitos no futuro, sem
+        # pressupor automaticamente habilidades de outros monstros.
+        for jogador in ("J1","J2"):
+            cid=s["jogadores"][jogador]["criatura_ativa_id"]
+            if cid is None:
+                continue
+            carta=self.get_card(s,jogador,cid)
+            try:
+                condicoes,efeitos,removidas=expirar_efeitos(
+                    carta["condicoes"],carta["efeitos"],
+                    fonte=fonte,turno_fonte=turno,
+                    mapeamento={"BLINDED_SPITTLE":"Blinded"},
+                )
+            except CicloPendente as exc:
+                raise UnresolvedRule(str(exc)) from exc
+            except CicloInvalido as exc:
+                raise InvalidAction(str(exc)) from exc
+            carta["condicoes"]=condicoes
+            carta["efeitos"]=efeitos
+            for item in removidas:
+                if item not in expiradas:
+                    expiradas.append(item)
+        return expiradas
 
     def _iniciar_gibbering_78(self, s, actor, params):
         """SRD 5.2.1, p.288: 7-8 força ataque em criatura no alcance.
