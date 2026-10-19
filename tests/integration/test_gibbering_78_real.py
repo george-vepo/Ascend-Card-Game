@@ -256,5 +256,212 @@ class TestGibbering78(unittest.TestCase):
         self.assertEqual(self.hp("J2","AB-POC-008"),43)
         self.assertEqual(self.hp("J1","CE-001"),15)
 
+    def test_22_gibbering_d5_pendente_ate_decisao_movimento(self):
+        anterior=copy.deepcopy(self.s.motor.state)
+        hash_anterior=self.s.motor.head_hash
+        eventos=len(self.s.motor.events)
+        r=self.start(d8=5)
+        self.assertEqual(r["decisao"],"PENDENTE",r)
+        self.assertEqual(self.s.motor.state,anterior)
+        self.assertEqual(self.s.motor.head_hash,hash_anterior)
+        self.assertEqual(len(self.s.motor.events),eventos)
+        self.assertIn("deslocamento aleatório",str(r))
+
+    def test_23_gibbering_d6_nao_pode_virar_turno_perdido(self):
+        anterior=copy.deepcopy(self.s.motor.state)
+        r=self.start(d8=6)
+        self.assertEqual(r["decisao"],"PENDENTE",r)
+        self.assertEqual(self.s.motor.state,anterior)
+        self.assertEqual(self.s.motor.state["ator_da_vez"],"J1")
+        self.assertEqual(self.cmd("J1","PASSAR_TURNO_V24_TESTE")["decisao"],"REJEITADA")
+
+    def test_24_sucesso_sab_nao_admite_d8_sobrando(self):
+        anterior=copy.deepcopy(self.s.motor.state)
+        r=self.start(d8=5,wis=15)
+        self.assertEqual(r["decisao"],"REJEITADA",r)
+        self.assertEqual(self.s.motor.state,anterior)
+
+    def test_25_sucesso_sab_sem_d8_permanece_aceito(self):
+        r=self.ok("J1","INICIO_TURNO_V24_TESTE",{
+            "aceite_escopo":ESCOPO,
+            "gibbering_aplicavel_fixture":True,
+            "wis_d20_simulado":15,
+        })
+        self.assertTrue(r["resultado"]["gibbering_sab"]["sucesso"])
+        self.assertEqual(
+            self.s.motor.acoes_disponiveis_teste()["acoes"],
+            ["ATAQUE_V24_TESTE"],
+        )
+
+    def test_26_resultados_1_4_ainda_permitem_passar_sem_acao(self):
+        r=self.start(d8=3)
+        self.assertEqual(r["decisao"],"ACEITA",r)
+        self.assertEqual(self.s.motor.acoes_disponiveis_teste()["acoes"],
+                         ["PASSAR_TURNO_V24_TESTE"])
+        self.ok("J1","PASSAR_TURNO_V24_TESTE")
+        self.assertEqual(self.s.motor.state["ator_da_vez"],"J2")
+
+    def test_27_consulta_publica_so_permite_inicio_inicialmente(self):
+        self.assertEqual(self.s.motor.acoes_disponiveis_teste()["acoes"],
+                         ["INICIO_TURNO_V24_TESTE"])
+        pub=self.s.mesa_publica()
+        self.assertEqual(pub["proximas_acoes_fixture"]["ator"],"J1")
+        self.assertEqual(pub["proximas_acoes_fixture"]["acoes"],
+                         ["INICIO_TURNO_V24_TESTE"])
+
+    def test_28_ataque_voluntario_so_apos_inicio_livre(self):
+        self.ok("J1","INICIO_TURNO_V24_TESTE",{
+            "aceite_escopo":ESCOPO,"gibbering_aplicavel_fixture":False
+        })
+        self.assertEqual(self.s.motor.acoes_disponiveis_teste()["acoes"],
+                         ["ATAQUE_V24_TESTE"])
+
+    def test_29_acao_forcada_e_a_unica_disponivel(self):
+        self.start(d8=7)
+        self.assertEqual(self.s.motor.acoes_disponiveis_teste()["acoes"],
+                         ["RESOLVER_ATAQUE_FORCADO_GIBBERING_TESTE"])
+        self.assertEqual(self.s.mesa_publica()["proximas_acoes_fixture"]["acoes"],
+                         ["RESOLVER_ATAQUE_FORCADO_GIBBERING_TESTE"])
+
+    def test_30_sem_alvo_somente_passar_turno(self):
+        self.start(d8=8,within=False)
+        self.assertEqual(self.s.motor.acoes_disponiveis_teste()["acoes"],
+                         ["PASSAR_TURNO_V24_TESTE"])
+
+    def _preparar_turno_do_mouther(self):
+        self.ok("J1","INICIO_TURNO_V24_TESTE",{
+            "aceite_escopo":ESCOPO,
+            "gibbering_aplicavel_fixture":False,
+        })
+        self.ok("J1","ATAQUE_V24_TESTE",{
+            "aceite_escopo":ESCOPO, "ataque":"Talons",
+            "alvo_no_alcance_fixture":True,
+            "d20_simulados":[12], "dano_dados":[1],
+        })
+        self.ok("J2","INICIO_TURNO_V24_TESTE",{
+            "aceite_escopo":ESCOPO,
+        })
+
+    def _passar_turno_owl_com_ataque(self):
+        self.ok("J1","INICIO_TURNO_V24_TESTE",{
+            "aceite_escopo":ESCOPO,
+            "gibbering_aplicavel_fixture":False,
+        })
+        self.ok("J1","ATAQUE_V24_TESTE",{
+            "aceite_escopo":ESCOPO,"ataque":"Talons",
+            "alvo_no_alcance_fixture":True,
+            "d20_simulados":[12],"dano_dados":[1],
+        })
+
+    def test_31_spittle_esta_disponivel_no_primeiro_turno(self):
+        self._preparar_turno_do_mouther()
+        self.assertEqual(self.s.motor.acoes_disponiveis_teste()["acoes"],
+                         ["ATAQUE_V24_TESTE","BLINDING_SPITTLE_V24_TESTE"])
+
+    def test_32_spittle_indisponivel_apos_uso_e_recarga_falha(self):
+        self._preparar_turno_do_mouther()
+        self.ok("J2","BLINDING_SPITTLE_V24_TESTE",{
+            "aceite_escopo":ESCOPO,"alvo_na_area_fixture":False,
+        })
+        self._passar_turno_owl_com_ataque()
+        r=self.ok("J2","INICIO_TURNO_V24_TESTE",{
+            "aceite_escopo":ESCOPO,
+            "recarga_d6_simulado":1,
+        })
+        self.assertFalse(r["resultado"]["recarga_spittle"]["recarregou"])
+        self.assertEqual(self.s.motor.acoes_disponiveis_teste()["acoes"],
+                         ["ATAQUE_V24_TESTE"])
+        anterior=copy.deepcopy(self.s.motor.state)
+        x=self.cmd("J2","BLINDING_SPITTLE_V24_TESTE",{
+            "aceite_escopo":ESCOPO,"alvo_na_area_fixture":False,
+        })
+        self.assertEqual(x["decisao"],"REJEITADA")
+        self.assertEqual(self.s.motor.state,anterior)
+
+    def test_33_spittle_retorna_apos_recarga_seis(self):
+        self._preparar_turno_do_mouther()
+        self.ok("J2","BLINDING_SPITTLE_V24_TESTE",{
+            "aceite_escopo":ESCOPO,"alvo_na_area_fixture":False,
+        })
+        self._passar_turno_owl_com_ataque()
+        r=self.ok("J2","INICIO_TURNO_V24_TESTE",{
+            "aceite_escopo":ESCOPO,"recarga_d6_simulado":6,
+        })
+        self.assertTrue(r["resultado"]["recarga_spittle"]["recarregou"])
+        self.assertIn("BLINDING_SPITTLE_V24_TESTE",
+                      self.s.motor.acoes_disponiveis_teste()["acoes"])
+        self.ok("J2","BLINDING_SPITTLE_V24_TESTE",{
+            "aceite_escopo":ESCOPO,"alvo_na_area_fixture":False,
+        })
+        self.assertFalse(self.s.motor.state["combate"]["v24"]["spittle_disponivel"])
+
+    def test_34_consulta_acoes_nao_muda_estado_nem_eventos(self):
+        estado=copy.deepcopy(self.s.motor.state)
+        eventos=len(self.s.motor.events)
+        h=self.s.motor.head_hash
+        for _ in range(5):
+            self.s.motor.acoes_disponiveis_teste()
+            self.s.mesa_publica()
+        self.assertEqual(self.s.motor.state,estado)
+        self.assertEqual(len(self.s.motor.events),eventos)
+        self.assertEqual(self.s.motor.head_hash,h)
+
+    def test_35_acao_publica_nao_expoe_cartas_na_mao(self):
+        import json
+        self.start(d8=7)
+        rendered=json.dumps(self.s.mesa_publica(),ensure_ascii=False)
+        self.assertNotIn("CE-002",rendered)
+        self.assertNotIn("AB-POC-002",rendered)
+        self.assertIn("RESOLVER_ATAQUE_FORCADO_GIBBERING_TESTE",rendered)
+
+    def test_36_fora_da_vez_nao_gera_pendencia_movimento(self):
+        self.start(d8=7)
+        before=copy.deepcopy(self.s.motor.state)
+        r=self.start(d8=5)
+        self.assertEqual(r["decisao"],"REJEITADA",r)
+        self.assertEqual(self.s.motor.state,before)
+
+    def test_37_blinded_so_expira_ao_fim_proximo_turno_mouther(self):
+        self._preparar_turno_do_mouther()
+        spit=self.ok("J2","BLINDING_SPITTLE_V24_TESTE",{
+            "aceite_escopo":ESCOPO,
+            "alvo_na_area_fixture":True,
+            "dex_d20_simulado":1,
+            "dano_d6_simulados":[2,2],
+        })
+        self.assertEqual(spit["resultado"]["blinded_ate_fim_turno_mouther"],2)
+        owl=self.s.motor.get_card(self.s.motor.state,"J1","CE-001")
+        self.assertIn("Blinded",owl["condicoes"])
+        self.assertEqual(len(owl["efeitos"]),1)
+        self.assertEqual(owl["efeitos"][0]["expira_ao_fim_turno_fonte"],2)
+        self.ok("J1","INICIO_TURNO_V24_TESTE",{
+            "aceite_escopo":ESCOPO,"gibbering_aplicavel_fixture":False,
+        })
+        self.assertIn("Blinded",owl["condicoes"])
+        attack=self.ok("J1","ATAQUE_V24_TESTE",{
+            "aceite_escopo":ESCOPO,"ataque":"Talons",
+            "alvo_no_alcance_fixture":True,
+            "d20_simulados":[12,12],"dano_dados":[1],
+        })
+        self.assertEqual(attack["resultado"]["modo_rolagem"],"DESVANTAGEM")
+        self.assertIn("Blinded",owl["condicoes"])
+        self.ok("J2","INICIO_TURNO_V24_TESTE",{
+            "aceite_escopo":ESCOPO,"recarga_d6_simulado":1,
+        })
+        self.assertIn("Blinded",owl["condicoes"])
+        bite=self.ok("J2","ATAQUE_V24_TESTE",{
+            "aceite_escopo":ESCOPO,"ataque":"Bite",
+            "alvo_no_alcance_fixture":True,
+            "d20_simulados":[12,12],"dano_dados":[1,1],
+        })
+        self.assertEqual(bite["resultado"]["modo_rolagem"],"VANTAGEM")
+        self.assertEqual(bite["resultado"]["efeitos_expirados"],["Blinded"])
+        # O motor opera por transações/cópias imutáveis de estado: refazer
+        # a leitura após o evento aceito, sem usar a referência da rodada anterior.
+        owl_atual = self.s.motor.get_card(self.s.motor.state,"J1","CE-001")
+        self.assertNotIn("Blinded",owl_atual["condicoes"])
+        self.assertFalse(owl_atual["efeitos"])
+        self.assertEqual(self.s.motor.state["placar"],{"J1":0,"J2":0})
+
 if __name__=="__main__":
     unittest.main()

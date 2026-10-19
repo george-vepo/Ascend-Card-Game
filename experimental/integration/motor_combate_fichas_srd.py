@@ -245,7 +245,65 @@ class MotorCombateFichasSRD(MotorFichasPOC, MotorCondicoesSRD):
             result["ko"] = False
         return result
 
+    def acoes_disponiveis_teste(self) -> dict:
+        """Consulta pública e pura ao estado; NÃO declara nem executa ações."""
+        s = self.state
+        etapa = s.get("fase")
+        ator = s.get("ator_da_vez")
+        resultado = {
+            "fase": etapa,
+            "ator": ator,
+            "acoes": [],
+            "escopo": "FIXTURE_SRD_PARCIAL",
+        }
+        if etapa != "COMBATE" or ator not in ("J1", "J2"):
+            return resultado
+        v = s.get("combate", {}).get("v24")
+        if v is None:
+            return resultado
+        if v["pendente_inicio"]:
+            resultado["acoes"] = ["INICIO_TURNO_V24_TESTE"]
+            return resultado
+        if v.get("ataque_forcado"):
+            resultado["acoes"] = ["RESOLVER_ATAQUE_FORCADO_GIBBERING_TESTE"]
+            return resultado
+        if v.get("gibbering_sem_alvo") or v["bloqueado"]:
+            resultado["acoes"] = ["PASSAR_TURNO_V24_TESTE"]
+            return resultado
+        if not v["inicio_resolvido"]:
+            return resultado
+        resultado["acoes"] = ["ATAQUE_V24_TESTE"]
+        if ator == "J2" and v["spittle_disponivel"]:
+            resultado["acoes"].append("BLINDING_SPITTLE_V24_TESTE")
+        return resultado
+
     def _transition(self, s, actor, command, params):
+        if command == "INICIO_TURNO_V24_TESTE" and actor == "J1":
+            d8 = params.get("gibbering_d8_simulado")
+            if (params.get("gibbering_aplicavel_fixture") is True
+                    and type(d8) is int and d8 in (5, 6, 7, 8)):
+                # Validar a fase ANTES da análise da salvaguarda, evitando
+                # transformar um comando fora de turno em regra pendente.
+                self._gate(s, "COMBATE", actor)
+                v = s["combate"].get("v24")
+                if v is None or not v["pendente_inicio"]:
+                    raise InvalidAction("efeito de início de turno já resolvido")
+                wis = params.get("wis_d20_simulado")
+                if self._die(wis, 20):
+                    regras = self._regras_efeitos(s)
+                    total = wis + regras["wis_bonus"]
+                    if total >= regras["gibbering"]["dc"]:
+                        raise InvalidAction(
+                            "sucesso em Sabedoria não permite rolar d8 Gibbering"
+                        )
+                    if d8 in (5, 6):
+                        # SRD: sem Action ou Bonus Action, e movimento TODO
+                        # em direção aleatória. A POC não regulamenta arena,
+                        # deslocamento/direção; não podemos consumir o turno.
+                        raise UnresolvedRule(
+                            "Gibbering d8 5–6 exige deslocamento aleatório; "
+                            "POC sem arena aguarda decisão do administrador"
+                        )
         if (command == "INICIO_TURNO_V24_TESTE" and actor == "J1"
                 and params.get("gibbering_d8_simulado") in (7, 8)):
             return self._iniciar_gibbering_78(s, actor, params)
@@ -313,6 +371,7 @@ class MotorCombateFichasSRD(MotorFichasPOC, MotorCondicoesSRD):
                 "SEM_ALVO_PASSAR_TURNO"
                 if v.get("gibbering_sem_alvo") else None
             )
+            data["proximas_acoes_fixture"] = self.acoes_disponiveis_teste()
         return data
 
     def checkpoint(self):
