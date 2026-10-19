@@ -163,6 +163,58 @@ class MotorRoperBasico(MotorFichasPOC):
     def _dado(valor, faces):
         return type(valor) is int and 1 <= valor <= faces
 
+    def prevalidar_reel(self) -> dict:
+        """Consulta pública e sem mutação; NÃO executa deslocamento nem ação.
+
+        Valida a fonte mecânica e a ligação do tentáculo ao Grappled.
+        O jogo não possui arena/posição aprovada: mesmo com alvo válido
+        o deslocamento permanece PENDENTE até decisão administrativa.
+        """
+        s = self.state
+        result = {
+            "acao": "REEL_ROPER_TESTE",
+            "estado": "INAPLICAVEL",
+            "executavel": False,
+            "consome_acao": False,
+            "alvos": [],
+            "dados_necessarios": [],
+            "lacuna": None,
+        }
+        if s.get("fase") != "COMBATE":
+            return result
+        if s.get("ator_da_vez") != "J2":
+            return result
+        perfis = self._perfis(s)
+        regra = perfis["J2"][1]["tentaculo"]["reel"]
+        slots = s["combate"].get("tentaculos_roper", {})
+        result["distancia_maxima_ft"] = regra["distancia_maxima_ft"]
+        result["origem_ficha_sha256"] = perfis["J2"][1]["tentaculo"]["sha256_documento"]
+        if not slots:
+            result["estado"] = "SEM_ALVO_AGARRADO"
+            return result
+        if len(slots) != 1:
+            raise UnresolvedRule("múltiplos alvos ainda não homologados")
+        slot, data = next(iter(slots.items()))
+        if (not slot.isdigit() or not 1 <= int(slot) <= 6
+                or data.get("origem_id") != "AB-POC-017"
+                or data.get("alvo_id") != "CE-001"):
+            raise UnresolvedRule("tentáculo e alvo inválidos para Reel")
+        result["estado"] = "PENDENTE_ARENA"
+        result["alvos"] = [{
+            "carta_id": "CE-001",
+            "tentaculo_numero": int(slot),
+            "condicoes": ["Grappled", "Poisoned"],
+        }]
+        result["dados_necessarios"] = [
+            "posicao_origem_aprovada", "posicao_alvo_aprovada",
+            "direcao_reta_para_roper", "distancia_permitida_pela_arena",
+        ]
+        result["lacuna"] = (
+            "Posicionamento e deslocamento de Reel exigem decisão "
+            "do administrador; a POC não possui arena regulamentada"
+        )
+        return result
+
     def _transition(self, s, actor, command, params):
         if command == "INICIATIVA_ROPER_TESTE":
             if actor != "ARBITRO" or s["fase"] != "INICIATIVA":
@@ -465,12 +517,12 @@ class MotorRoperBasico(MotorFichasPOC):
             if actor != "J2":
                 raise InvalidAction("Reel pertence ao Roper")
             self._gate(s,"COMBATE",actor)
-            pair=self._perfis(s)
-            if not s["combate"].get("tentaculos_roper"):
+            diagnostico=self.prevalidar_reel()
+            if diagnostico["estado"] == "SEM_ALVO_AGARRADO":
                 raise UnresolvedRule("Reel exige alvo Grappled documentado")
             raise UnresolvedRule(
-                "Reel puxa até "+str(pair["J2"][1]["tentaculo"]["reel"]["distancia_maxima_ft"])+
-                " pés; arena/posicionamento não regulamentados na POC"
+                diagnostico["lacuna"] or
+                "Reel sem pré-requisitos resolvidos pela POC"
             )
         if command in {
             "MULTIATTACK_ROPER_TESTE",
