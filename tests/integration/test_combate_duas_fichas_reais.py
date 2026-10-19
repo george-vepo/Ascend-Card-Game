@@ -63,7 +63,7 @@ class CombateSRDComFontes(unittest.TestCase):
         return self.go("J1","ATAQUE_V24_TESTE",p)
 
     def inicio_mouth(self,recharge=None):
-        p={}
+        p={"aceite_escopo":ESCOPO}
         if recharge is not None:p["recarga_d6_simulado"]=recharge
         return self.go("J2","INICIO_TURNO_V24_TESTE",p)
 
