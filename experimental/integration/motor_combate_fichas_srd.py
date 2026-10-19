@@ -26,13 +26,11 @@ from motor_base_v22 import (
 PARES = {"J1": "CE-001", "J2": "AB-POC-008"}
 ESCOPO = "EFEITOS_SRD_PARCIAIS_TESTE"
 
-# Reconhecimentos mínimos vindos dos textos integrais, não são ficha
-# alternativa; divergência do Catálogo suspende somente este combate.
+# Traços adicionais exigidos pelas ações parciais v2.4. Os valores de ataque,
+# iniciativa, CA, PV e dano são extraídos por perfil_combate_srd.py.
 FRASES_OBRIGATORIAS = {
     "CE-001": (
         "Large Celestial",
-        "Talons. Melee Attack Roll: +4, reach 5 ft.",
-        "Hit: 7 (1d10 + 2) Slashing damage.",
         "Resistances Necrotic, Radiant",
         "Flyby.",
         "Spellcasting.",
@@ -42,8 +40,6 @@ FRASES_OBRIGATORIAS = {
         "Gibbering.",
         "7–8. The target makes a melee attack against a randomly determined creature within its reach",
         "Wisdom Saving Throw: DC 10",
-        "Bite. Melee Attack Roll: +2, reach 5 ft.",
-        "Hit: 7 (2d6) Piercing damage.",
         "Blinding Spittle (Recharge 5–6).",
         "Dexterity Saving Throw: DC 10",
     ),
