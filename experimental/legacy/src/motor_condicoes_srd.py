@@ -47,6 +47,53 @@ class MotorCondicoesSRD(MotorCombateSRD):
                        'recharge_min':5,'recharge_max':6},
         }
 
+    def _aplicar_recarga_spittle(self,s,dado,presente):
+        """Comportamento legado preservado; integração SRD sobrescreve."""
+        v=s['combate']['v24']
+        if not v['spittle_disponivel']:
+            if not self._die(dado,6):
+                raise InvalidAction('recarga 5-6 exige d6 simulado')
+            regras=self._regras_efeitos(s)
+            faixa=regras['spittle']
+            v['spittle_disponivel']=(faixa['recharge_min']<=dado<=faixa['recharge_max'])
+            return {'d6':dado,'recarregou':v['spittle_disponivel']}
+        if presente:
+            raise InvalidAction('nao rolar recarga com poder disponivel')
+        return None
+
+    def _consumir_spittle(self,s):
+        s['combate']['v24']['spittle_disponivel']=False
+
+    def _aplicar_blinded_spittle(self,s,v,victim,out):
+        """Expiração legada; nova camada usa ciclo de condições compartilhado."""
+        if 'Blinded' not in victim['condicoes']:
+            victim['condicoes'].append('Blinded')
+        expiry=v['turnos_iniciados']['J2']+1
+        victim['efeitos']=[
+            e for e in victim['efeitos'] if e.get('tipo')!='BLINDED_SPITTLE'
+        ]
+        victim['efeitos'].append({
+            'tipo':'BLINDED_SPITTLE','fonte':'AB-POC-008',
+            'expira_ao_fim_turno_fonte':expiry,
+        })
+        out['blinded_ate_fim_turno_mouther']=expiry
+
+    def _expirar_condicoes_fonte(self,s,actor):
+        """Legado: expira Blinded apenas ao fim do turno da fonte."""
+        v=s['combate']['v24']
+        expired=[]
+        if actor=='J2':
+            victim=self.get_card(s,'J1','CE-001')
+            for effect in list(victim['efeitos']):
+                if (effect.get('tipo')=='BLINDED_SPITTLE' and
+                        v['turnos_iniciados']['J2']>=effect['expira_ao_fim_turno_fonte']):
+                    victim['efeitos'].remove(effect)
+                    if not any(e.get('tipo')=='BLINDED_SPITTLE' for e in victim['efeitos']):
+                        if 'Blinded' in victim['condicoes']:
+                            victim['condicoes'].remove('Blinded')
+                    expired.append('Blinded')
+        return expired
+
     def _ready(self,s,actor):
         self._gate(s,'COMBATE',actor)
         if s['combate']['iniciativas'].get('origem')!='DADOS_SIMULADOS_TESTE':
@@ -101,14 +148,12 @@ class MotorCondicoesSRD(MotorCombateSRD):
                 elif any(k in params for k in ('wis_d20_simulado','gibbering_d8_simulado')):
                     raise InvalidAction('dados Gibbering indevidos se gatilho nao se aplica')
             else:
-                if not v['spittle_disponivel']:
-                    roll=params.get('recarga_d6_simulado')
-                    if not self._die(roll,6):raise InvalidAction('recarga 5-6 exige d6 simulado')
-                    regras=self._regras_efeitos(s)
-                    v['spittle_disponivel']=(regras['spittle']['recharge_min']<=roll<=regras['spittle']['recharge_max'])
-                    response['recarga_spittle']={'d6':roll,'recarregou':v['spittle_disponivel']}
-                elif 'recarga_d6_simulado' in params:
-                    raise InvalidAction('nao rolar recarga com poder disponivel')
+                info=self._aplicar_recarga_spittle(
+                    s,params.get('recarga_d6_simulado'),
+                    'recarga_d6_simulado' in params
+                )
+                if info is not None:
+                    response['recarga_spittle']=info
             v['turnos_iniciados'][actor]=next_count
             v['pendente_inicio']=False
             v['inicio_resolvido']=True
@@ -205,18 +250,12 @@ class MotorCondicoesSRD(MotorCombateSRD):
                     out.update({'dano_bruto':raw,'dano_aplicado':applied,'dados_dano':dice,
                                 'resistencia_radiante':resistiu,'tipo_dano':spittle['damage_type']})
                     if victim['pv_atual']>0:
-                        if 'Blinded' not in victim['condicoes']:victim['condicoes'].append('Blinded')
-                        # Spittle ends at end of next Mouther turn, not current one.
-                        expiry=v['turnos_iniciados']['J2']+1
-                        victim['efeitos']=[e for e in victim['efeitos'] if e.get('tipo')!='BLINDED_SPITTLE']
-                        victim['efeitos'].append({'tipo':'BLINDED_SPITTLE','fonte':'AB-POC-008',
-                                                  'expira_ao_fim_turno_fonte':expiry})
-                        out['blinded_ate_fim_turno_mouther']=expiry
+                        self._aplicar_blinded_spittle(s,v,victim,out)
                 elif 'dano_d6_simulados' in params:
                     raise InvalidAction('salvaguarda bem sucedida nao recebe dados de dano')
             elif any(k in params for k in ('dex_d20_simulado','dano_d6_simulados')):
                 raise InvalidAction('alvo fora de area nao rola salvaguarda/dano')
-            v['spittle_disponivel']=False
+            self._consumir_spittle(s)
             out['pv_antes']=before;out['pv_depois']=victim['pv_atual']
             if victim['pv_atual']==0:
                 self._ko(s,'J2','FIXTURE_SRD_V24_BLINDING_SPITTLE_KO')
@@ -228,16 +267,8 @@ class MotorCondicoesSRD(MotorCombateSRD):
 
     def _finish_turn(self,s,actor):
         v=s['combate']['v24']
-        # End source's *next* turn removes Blinded.
-        expired=[]
-        if actor=='J2':
-            victim=self.get_card(s,'J1','CE-001')
-            for effect in list(victim['efeitos']):
-                if effect.get('tipo')=='BLINDED_SPITTLE' and v['turnos_iniciados']['J2']>=effect['expira_ao_fim_turno_fonte']:
-                    victim['efeitos'].remove(effect)
-                    if not any(e.get('tipo')=='BLINDED_SPITTLE' for e in victim['efeitos']):
-                        if 'Blinded' in victim['condicoes']:victim['condicoes'].remove('Blinded')
-                    expired.append('Blinded')
+        # Reutilizar o ciclo de efeitos; legado preserva a mesma semântica.
+        expired=self._expirar_condicoes_fonte(s,actor)
         order=s['combate']['ordem_turnos'];index=s['combate']['indice_turno']
         if order[index]!=actor:raise InvalidAction('indice de turno inconsistente')
         if index==0:
