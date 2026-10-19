@@ -1,0 +1,10 @@
+{
+  "repositor_io": "george-vepo/Catalogo-SRD",
+  "revisao_commit": "ba0f496895438ef683855a7d65df375503c313fd",
+  "arquivos": {
+    "celestial": "docs/catalogo/data/deck-celestial-40.json",
+    "aberracao": "docs/catalogo/data/deck-aberracao-40.json"
+  },
+  "quantidade_por_deck": 40,
+  "aviso": "Revisão para consulta. Nenhuma ficha ou habilidade se torna homologada pelo carregamento."
+}

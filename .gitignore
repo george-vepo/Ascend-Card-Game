@@ -10,3 +10,4 @@ venv/
 runtime/
 private/
 checkpoints/private/
+external/
