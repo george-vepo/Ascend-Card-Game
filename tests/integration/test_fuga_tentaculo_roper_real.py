@@ -61,7 +61,7 @@ class FugaRoperSRD(unittest.TestCase):
     def escape(self,skill="Athletics",roll=13,actor="J1"):
         return self.act(actor,"ESCAPAR_GRAPPLE_ROPER_TESTE",{
             "aceite_escopo":ESCOPO_BASICO,
-            "pericia":skill,"d20_simulado":roll,
+            "pericia":skill,"d20_simulados":[roll,roll],
         })
 
     def hit_tentacle(self,slot=1,rolls=None,dice=None,reach=True):

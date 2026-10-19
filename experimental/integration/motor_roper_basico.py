@@ -16,6 +16,9 @@ from ascend.fichas_srd import consultar_ficha, FichaPendente, FichaConflitante
 from ascend.perfil_combate_srd import extrair_perfil_de_combate
 from ascend.tentaculo_roper_srd import extrair_tentaculo_roper
 from ascend.fuga_roper_srd import extrair_testes_fuga_owl
+from ascend.testes_d20_srd import (
+    resolver_teste_atributo, TesteD20Invalido, TesteD20Pendente,
+)
 from motor_poc import MotorPOC, InvalidAction, UnresolvedRule, SIDES, other
 from motor_fichas_poc import MotorFichasPOC, SessaoFichasFixture
 
@@ -356,21 +359,35 @@ class MotorRoperBasico(MotorFichasPOC):
             mods=pair["J1"][1]["testes_fuga"]
             if habilidade not in mods:
                 raise InvalidAction("escolha Athletics ou Acrobatics")
-            d20=params.get("d20_simulado")
-            if not self._dado(d20,20):
-                raise InvalidAction("d20 externo obrigatório para fuga")
+            # SRD 5.2.1: Poisoned aplica desvantagem a testes de
+            # atributo, inclusive Strength (Athletics) ou Dexterity
+            # (Acrobatics) para escapar de Grappled.
+            if "d20_simulado" in params:
+                raise UnresolvedRule(
+                    "fuga requer d20_simulados: Poisoned não permite "
+                    "usar um único d20 sem desvantagem"
+                )
             dc=pair["J2"][1]["tentaculo"]["escape_dc"]
-            total=d20+mods[habilidade]
-            sucesso=total>=dc
+            owl=self.get_card(s,"J1","CE-001")
+            try:
+                teste=resolver_teste_atributo(
+                    condicoes=owl["condicoes"],
+                    dados=params.get("d20_simulados"),
+                    modificador=mods[habilidade],cd=dc,
+                )
+            except TesteD20Pendente as exc:
+                raise UnresolvedRule(str(exc)) from exc
+            except TesteD20Invalido as exc:
+                raise InvalidAction(str(exc)) from exc
+            sucesso=teste["sucesso"]
             if sucesso:
                 self._libertar_tentaculo(s,int(slot_str))
             result={
                 "acao":"ESCAPAR_GRAPPLE","pericia":habilidade,
-                "d20_simulado":d20,"modificador":mods[habilidade],
-                "total":total,"cd":dc,"sucesso":sucesso,
+                **teste,
                 "condicoes_removidas":(["Grappled","Poisoned"] if sucesso else []),
                 "slot_liberado":int(slot_str) if sucesso else None,
-                "dados_simulados":True,"mecanica_parcial":True,
+                "mecanica_parcial":True,
             }
             result.update(self._proximo_turno(s,actor))
             return result
