@@ -4,6 +4,8 @@ on:
     paths:
       - "src/ascend/perfil_combate_srd.py"
       - "experimental/integration/motor_roper_basico.py"
+      - "src/ascend/tentaculo_roper_srd.py"
+      - "tests/integration/test_roper_tentacle_real.py"
       - "tests/integration/test_roper_basico_real.py"
       - ".github/workflows/validate-roper-basico.yml"
   workflow_dispatch:
@@ -34,4 +36,6 @@ jobs:
       - name: Testar fixtures Roper com catálogo externo
         env:
           CATALOGO_SRD_DIR: external/Catalogo-SRD
-        run: python -m unittest discover -s tests/integration -p test_roper_basico_real.py -v
+        run: |
+          python -m unittest discover -s tests/integration -p test_roper_basico_real.py -v
+          python -m unittest discover -s tests/integration -p test_roper_tentacle_real.py -v
