@@ -63,7 +63,8 @@ def extrair_efeitos_gibbering(ficha: FichaConsultada) -> dict:
     )
     # Não confundir 1–4/5–6/7–8 com a recarga do outro efeito.
     if not all(x in area_gibbering for x in (
-        "1–4.", "5–6.", "7–8.", "randomly determined creature within",
+        "1–4.", "5–6.",
+        "7–8. The target makes a melee attack against a randomly determined creature within",
     )):
         raise FichaConflitante("faixas d8 do Gibbering incompletas")
     cd_gib = _limite(int(gib.group(1)), "CD Gibbering", 1, 35)
