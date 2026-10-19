@@ -59,13 +59,14 @@ class MotorComFonteSRDReal(unittest.TestCase):
         self.assertEqual(restored.mesa_publica(),s.mesa_publica())
         self.assertTrue(restored.motor.validate())
 
-    def test_04_jogador_j1_sem_ficha_sr521_consultavel_pendente(self):
+    def test_04_jogador_j1_invoca_giant_owl_com_ficha_real(self):
         s=self.sessao
         self.assertEqual(s.comando("pronto","J2","PRONTO_CRIATURA",{})["decisao"],"ACEITA")
-        before=copy.deepcopy(s.motor.state)
         result=s.comando("ce","J1","INVOCAR",{"carta_id":"CE-001"})
-        self.assertEqual(result["decisao"],"PENDENTE")
-        self.assertEqual(s.motor.state,before)
+        self.assertEqual(result["decisao"],"ACEITA")
+        c=s.motor.get_card(s.motor.state,"J1","CE-001")
+        self.assertEqual((c["pv_atual"],c["pv_max"],c["ca_fonte"]),(19,19,12))
+        self.assertFalse(c["origem_ficha"]["habilidades_homologadas"])
 
     def test_05_placar_nunca_modificado(self):
         self.assertEqual(self.sessao.motor.state["placar"],{"J1":0,"J2":0})

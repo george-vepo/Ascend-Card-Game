@@ -29,7 +29,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: george-vepo/Catalogo-SRD
-          ref: ba0f496895438ef683855a7d65df375503c313fd
+          ref: 03f84e8426f469ef6a0e471faea2093b7c0b69c9
           path: external/Catalogo-SRD
           persist-credentials: false
           sparse-checkout: |
