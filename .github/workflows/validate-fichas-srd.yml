@@ -1,0 +1,46 @@
+name: Consultar fichas SRD sob demanda
+on:
+  pull_request:
+    paths:
+      - "src/ascend/fichas_srd.py"
+      - "tests/fichas/**"
+      - "tests/integration/test_fichas_srd_reais.py"
+      - ".github/workflows/validate-fichas-srd.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Fixtures sintéticas do leitor SRD
+        run: python -m unittest discover -s tests/fichas -v
+
+  fonte-real:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: george-vepo/Catalogo-SRD
+          ref: ba0f496895438ef683855a7d65df375503c313fd
+          path: external/Catalogo-SRD
+          persist-credentials: false
+          sparse-checkout: |
+            docs/catalogo/data/deck-celestial-40.json
+            docs/catalogo/data/deck-aberracao-40.json
+            operational/research/decks/aberracao-40-20261014/fichas_srd521_integral_3.json
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Verificar fichas reais com fonte fixada
+        env:
+          CATALOGO_SRD_DIR: external/Catalogo-SRD
+        run: python -m unittest discover -s tests/integration -p test_fichas_srd_reais.py -v
