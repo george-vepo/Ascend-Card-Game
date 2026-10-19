@@ -8,6 +8,7 @@ on:
       - "tests/efeitos/**"
       - "tests/integration/test_efeitos_reais.py"
       - "tests/integration/test_combate_duas_fichas_reais.py"
+      - "tests/integration/test_gibbering_78_real.py"
       - ".github/workflows/validate-combate-duas-fichas.yml"
       - "src/ascend/fichas_srd.py"
       - "experimental/integration/motor_fichas_poc.py"
