@@ -456,8 +456,11 @@ class TestGibbering78(unittest.TestCase):
         })
         self.assertEqual(bite["resultado"]["modo_rolagem"],"VANTAGEM")
         self.assertEqual(bite["resultado"]["efeitos_expirados"],["Blinded"])
-        self.assertNotIn("Blinded",owl["condicoes"])
-        self.assertFalse(owl["efeitos"])
+        # O motor opera por transações/cópias imutáveis de estado: refazer
+        # a leitura após o evento aceito, sem usar a referência da rodada anterior.
+        owl_atual = self.s.motor.get_card(self.s.motor.state,"J1","CE-001")
+        self.assertNotIn("Blinded",owl_atual["condicoes"])
+        self.assertFalse(owl_atual["efeitos"])
         self.assertEqual(self.s.motor.state["placar"],{"J1":0,"J2":0})
 
 if __name__=="__main__":
