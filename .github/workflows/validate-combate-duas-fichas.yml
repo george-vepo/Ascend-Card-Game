@@ -46,3 +46,4 @@ jobs:
           python -m unittest discover -s tests/perfil -v
           python -m unittest discover -s tests/efeitos -v
           python -m unittest discover -s tests/integration -p test_efeitos_reais.py -v
+          python -m unittest discover -s tests/integration -p test_legacy_hook_compat.py -v
