@@ -1,6 +1,6 @@
-"""Terceira criatura SRD: duelo de Bite isolado Roper × Giant Owl.
+"""Terceira criatura SRD: Bite e Tentacle isolados Roper × Giant Owl.
 
-NÃO é combate SRD completo: Tentacle, Reel, Multiattack, Spider Climb, Flyby,
+NÃO é combate SRD completo: Reel, Multiattack, Spider Climb, Flyby,
 movimento, recursos e magias continuam sem resolução neste recorte.
 Somente cópias com ficha verificada no Catálogo SRD pinado.
 Dados e alcance são informados externamente em fixtures, sem RNG.
@@ -14,6 +14,7 @@ from typing import Any, Mapping
 from ascend.catalogo_poc import CopiaReferencia
 from ascend.fichas_srd import consultar_ficha, FichaPendente, FichaConflitante
 from ascend.perfil_combate_srd import extrair_perfil_de_combate
+from ascend.tentaculo_roper_srd import extrair_tentaculo_roper
 from motor_poc import MotorPOC, InvalidAction, UnresolvedRule, SIDES, other
 from motor_fichas_poc import MotorFichasPOC, SessaoFichasFixture
 
@@ -24,16 +25,60 @@ DUELO_ROPER = {"J1": "CE-001", "J2": "AB-POC-017"}
 class MotorRoperBasico(MotorFichasPOC):
     """Iniciativa e um ataque corpo a corpo por turno em fixture isolada."""
 
+    def _estado_agarrado(self, estado, card):
+        """Aceita somente status originado por um Tentacle previamente validado."""
+        condicoes = card["condicoes"]
+        efeitos = card["efeitos"]
+        slots = estado["combate"].get("tentaculos_roper", {})
+        if not condicoes and not efeitos:
+            if slots:
+                raise UnresolvedRule("grapple no combate sem condição correspondente")
+            return
+        if (set(condicoes) != {"Grappled", "Poisoned"}
+                or len(condicoes) != 2 or len(efeitos) != 1
+                or len(slots) != 1):
+            raise UnresolvedRule("condições fora do recorte Tentacle não homologadas")
+        key, registro = next(iter(slots.items()))
+        efeito = efeitos[0]
+        if (type(key) is not str or not key.isdigit()
+                or not 1 <= int(key) <= 6
+                or not isinstance(registro, dict)
+                or registro.get("alvo_id") != "CE-001"
+                or registro.get("origem_id") != "AB-POC-017"
+                or efeito != {
+                    "tipo": "ROPER_TENTACLE_GRAPPLE",
+                    "fonte": "AB-POC-017",
+                    "alvo_id": "CE-001",
+                    "tentaculo": int(key),
+                    "condicoes": ["Grappled", "Poisoned"],
+                    "escape_dc": 14,
+                    "sha256_documento": registro.get("sha256_documento"),
+                }):
+            raise UnresolvedRule("vínculo entre tentáculo, efeito e alvo divergente")
+
+    @staticmethod
+    def _proximo_turno(estado, actor):
+        combate = estado["combate"]
+        if combate["ordem_turnos"][combate["indice_turno"]] != actor:
+            raise InvalidAction("ordem de iniciativa inconsistente")
+        if combate["indice_turno"] == 0:
+            combate["indice_turno"] = 1
+        else:
+            combate["indice_turno"] = 0
+            combate["rodada"] += 1
+        estado["ator_da_vez"] = combate["ordem_turnos"][combate["indice_turno"]]
+        return {"proximo_ator":estado["ator_da_vez"],"rodada":combate["rodada"]}
+
     def _perfis(self, estado: dict) -> dict[str, tuple[str, dict]]:
         perfis = {}
         for jogador, id_copia in DUELO_ROPER.items():
             card = self.get_card(estado, jogador, id_copia)
             if estado["jogadores"][jogador]["criatura_ativa_id"] != id_copia:
                 raise UnresolvedRule("este confronto só abrange Giant Owl × Roper")
-            if card["condicoes"] or card["efeitos"]:
-                raise UnresolvedRule(
-                    "condições/efeitos não resolvidos neste recorte básico"
-                )
+            if jogador == "J1":
+                self._estado_agarrado(estado, card)
+            elif card["condicoes"] or card["efeitos"]:
+                raise UnresolvedRule("Roper com condições/efeitos não integrados")
             if self.exigir_revisao:
                 from motor_fichas_poc import conferir_checkout_sem_modificacoes
                 conferir_checkout_sem_modificacoes(self.checkout_catalogo)
@@ -43,6 +88,8 @@ class MotorRoperBasico(MotorFichasPOC):
                     id_copia, exigir_revisao=self.exigir_revisao,
                 )
                 perfil = extrair_perfil_de_combate(ficha)
+                if jogador == "J2":
+                    perfil["tentaculo"] = extrair_tentaculo_roper(ficha)
             except (FichaPendente, FichaConflitante) as exc:
                 raise UnresolvedRule("ficha/perfil SRD pendente: " + str(exc)) from exc
             esperado = {
@@ -62,6 +109,11 @@ class MotorRoperBasico(MotorFichasPOC):
                     "Talons" if jogador == "J1" else "Bite"):
                 raise UnresolvedRule("ação da ficha não reconhecida para este recorte")
             perfis[jogador] = (id_copia, perfil)
+        slots = estado["combate"].get("tentaculos_roper", {})
+        if slots:
+            ref = perfis["J2"][1]["tentaculo"]["sha256_documento"]
+            if any(v.get("sha256_documento") != ref for v in slots.values()):
+                raise UnresolvedRule("grapple depende de ficha Roper alterada")
         return perfis
 
     @staticmethod
@@ -125,9 +177,21 @@ class MotorRoperBasico(MotorFichasPOC):
             attack = own["attack"]
             if params.get("ataque") != attack["name"]:
                 raise InvalidAction("apenas a ação de ataque documentada é permitida")
-            d20 = params.get("d20_simulado")
-            if not self._dado(d20, 20):
-                raise InvalidAction("d20 simulado inválido")
+            poisoned = actor == "J1" and "Poisoned" in (
+                self.get_card(s, actor, own_id)["condicoes"]
+            )
+            if poisoned:
+                rolagens = params.get("d20_simulados")
+                if not isinstance(rolagens, list) or len(rolagens)!=2 or not all(
+                    self._dado(x, 20) for x in rolagens
+                ):
+                    raise UnresolvedRule("Poisoned exige dois d20 externos para desvantagem")
+                d20 = min(rolagens)
+            else:
+                d20 = params.get("d20_simulado")
+                if not self._dado(d20, 20):
+                    raise InvalidAction("d20 simulado inválido")
+                rolagens = [d20]
             natural20 = d20 == 20
             total = d20 + attack["bonus"]
             hit = natural20 or (d20 != 1 and total >= target["ac"])
@@ -152,7 +216,9 @@ class MotorRoperBasico(MotorFichasPOC):
                 "ator": actor, "carta_origem": own_id,
                 "alvo": defender, "carta_alvo": target_id,
                 "ataque": attack["name"], "tipo_dano": attack["type"],
-                "d20_simulado": d20, "bonus": attack["bonus"],
+                "d20_simulado": d20, "d20_recebidos":copy.deepcopy(rolagens),
+                "modo_rolagem":"DESVANTAGEM" if poisoned else "NORMAL",
+                "bonus": attack["bonus"],
                 "total_ataque": total, "ca_alvo": target["ac"],
                 "critico": natural20, "acertou": hit,
                 "dados_dano_simulados": list(dice),
@@ -167,23 +233,84 @@ class MotorRoperBasico(MotorFichasPOC):
                 result["ko"] = True
                 result["pontuacao_fixture"] = copy.deepcopy(s["placar"])
             else:
-                combat = s["combate"]
-                if combat["ordem_turnos"][combat["indice_turno"]] != actor:
-                    raise InvalidAction("ordem de iniciativa divergente")
-                if combat["indice_turno"] == 0:
-                    combat["indice_turno"] = 1
-                else:
-                    combat["indice_turno"] = 0
-                    combat["rodada"] += 1
-                s["ator_da_vez"] = combat["ordem_turnos"][combat["indice_turno"]]
-                result.update({
-                    "ko": False, "proximo_ator": s["ator_da_vez"],
-                    "rodada": combat["rodada"],
-                })
+                result["ko"]=False
+                result.update(self._proximo_turno(s,actor))
             return result
+        if command == "TENTACLE_ROPER_TESTE":
+            if actor != "J2":
+                raise InvalidAction("Tentacle pertence ao Roper do J2")
+            self._gate(s,"COMBATE",actor)
+            if params.get("aceite_escopo") != ESCOPO_BASICO:
+                raise UnresolvedRule("escopo parcial de Tentacle não confirmado")
+            reach=params.get("alvo_no_alcance_fixture")
+            if type(reach) is not bool:
+                raise UnresolvedRule("alcance 60 pés exige confirmação externa")
+            if not reach:
+                raise InvalidAction("Giant Owl fora do alcance informado")
+            pair=self._perfis(s)
+            source=pair["J2"][1]["tentaculo"]
+            slot=params.get("tentaculo_numero")
+            if type(slot) is not int or not 1 <= slot <= source["quantidade_tentaculos"]:
+                raise InvalidAction("selecionar tentáculo entre 1 e 6")
+            ocupado=s["combate"].get("tentaculos_roper",{})
+            if str(slot) in ocupado:
+                raise InvalidAction("tentáculo já mantém alvo agarrado")
+            if ocupado:
+                raise UnresolvedRule("múltiplos tentáculos no mesmo alvo ainda não tratados")
+            roll=params.get("d20_simulado")
+            if not self._dado(roll,20):
+                raise InvalidAction("rolagem de ataque d20 simulada obrigatória")
+            atk=source["bonus_ataque"]
+            ca=pair["J1"][1]["ac"]
+            acerto=roll == 20 or (roll != 1 and roll+atk >= ca)
+            owl=self.get_card(s,"J1","CE-001")
+            result={
+                "ator":actor,"carta_origem":"AB-POC-017",
+                "carta_alvo":"CE-001","ataque":"Tentacle",
+                "tentaculo_numero":slot,"d20_simulado":roll,
+                "bonus":atk,"total_ataque":roll+atk,"ca_alvo":ca,
+                "acertou":acerto,"critico":roll==20,
+                "dano_aplicado":0,"dados_simulados":True,
+                "alcance_ft":source["alcance_ft"],
+                "ficha_sha256":source["sha256_documento"],
+                "mecanica_parcial":True,"reel_pendente":True,
+            }
+            if acerto:
+                owl["condicoes"]=["Grappled","Poisoned"]
+                efeito={
+                    "tipo":"ROPER_TENTACLE_GRAPPLE",
+                    "fonte":"AB-POC-017","alvo_id":"CE-001",
+                    "tentaculo":slot,"condicoes":["Grappled","Poisoned"],
+                    "escape_dc":source["escape_dc"],
+                    "sha256_documento":source["sha256_documento"],
+                }
+                owl["efeitos"].append(efeito)
+                s["combate"]["tentaculos_roper"]={
+                    str(slot):{
+                        "origem_id":"AB-POC-017","alvo_id":"CE-001",
+                        "sha256_documento":source["sha256_documento"],
+                    }
+                }
+                result["condicoes_aplicadas"]=["Grappled","Poisoned"]
+                result["escape_dc"]=source["escape_dc"]
+            else:
+                result["condicoes_aplicadas"]=[]
+            result.update(self._proximo_turno(s,actor))
+            return result
+        if command == "REEL_ROPER_TESTE":
+            if actor != "J2":
+                raise InvalidAction("Reel pertence ao Roper")
+            self._gate(s,"COMBATE",actor)
+            pair=self._perfis(s)
+            if not s["combate"].get("tentaculos_roper"):
+                raise UnresolvedRule("Reel exige alvo Grappled documentado")
+            raise UnresolvedRule(
+                "Reel puxa até "+str(pair["J2"][1]["tentaculo"]["reel"]["distancia_maxima_ft"])+
+                " pés; arena/posicionamento não regulamentados na POC"
+            )
         if command in {
-            "MULTIATTACK_ROPER_TESTE", "TENTACLE_ROPER_TESTE",
-            "REEL_ROPER_TESTE", "SPIDER_CLIMB_ROPER_TESTE",
+            "MULTIATTACK_ROPER_TESTE",
+            "SPIDER_CLIMB_ROPER_TESTE",
         }:
             raise UnresolvedRule(
                 "habilidade SRD documentada, ainda não implementada neste recorte"
@@ -204,6 +331,9 @@ class MotorRoperBasico(MotorFichasPOC):
                     if card else None
                 )
             out["mecanica_parcial"] = True
+            out["tentaculos_em_uso"] = copy.deepcopy(
+                self.state["combate"].get("tentaculos_roper",{})
+            )
         return out
 
 
