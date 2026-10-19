@@ -1,0 +1,46 @@
+name: Conferir referências do Catálogo SRD
+on:
+  pull_request:
+    paths:
+      - "src/ascend/catalogo_poc.py"
+      - "config/catalogo_srd.json"
+      - "tests/catalogo/**"
+      - "tests/integration/**"
+      - ".github/workflows/validate-catalogo-srd.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Testes sintéticos do adaptador
+        run: python -m unittest discover -s tests/catalogo -v
+
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: george-vepo/Catalogo-SRD
+          ref: ba0f496895438ef683855a7d65df375503c313fd
+          path: external/Catalogo-SRD
+          persist-credentials: false
+          sparse-checkout: |
+            docs/catalogo/data/deck-celestial-40.json
+            docs/catalogo/data/deck-aberracao-40.json
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validar 80 referências reais, sem copiar para o repositório Ascend
+        env:
+          CATALOGO_SRD_DIR: external/Catalogo-SRD
+        run: python -m unittest discover -s tests/integration -v
