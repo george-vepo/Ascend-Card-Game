@@ -12,6 +12,7 @@ from typing import Mapping, Sequence, Any
 
 from ascend.catalogo_poc import CopiaReferencia
 from ascend.fichas_srd import consultar_ficha, FichaPendente, FichaConflitante
+from ascend.perfil_combate_srd import extrair_perfil_de_combate
 from motor_fichas_poc import MotorFichasPOC, SessaoFichasFixture
 from motor_condicoes_srd import MotorCondicoesSRD
 from motor_poc import (
@@ -25,13 +26,11 @@ from motor_base_v22 import (
 PARES = {"J1": "CE-001", "J2": "AB-POC-008"}
 ESCOPO = "EFEITOS_SRD_PARCIAIS_TESTE"
 
-# Reconhecimentos mínimos vindos dos textos integrais, não são ficha
-# alternativa; divergência do Catálogo suspende somente este combate.
+# Traços adicionais exigidos pelas ações parciais v2.4. Os valores de ataque,
+# iniciativa, CA, PV e dano são extraídos por perfil_combate_srd.py.
 FRASES_OBRIGATORIAS = {
     "CE-001": (
         "Large Celestial",
-        "Talons. Melee Attack Roll: +4, reach 5 ft.",
-        "Hit: 7 (1d10 + 2) Slashing damage.",
         "Resistances Necrotic, Radiant",
         "Flyby.",
         "Spellcasting.",
@@ -41,8 +40,6 @@ FRASES_OBRIGATORIAS = {
         "Gibbering.",
         "7–8. The target makes a melee attack against a randomly determined creature within its reach",
         "Wisdom Saving Throw: DC 10",
-        "Bite. Melee Attack Roll: +2, reach 5 ft.",
-        "Hit: 7 (2d6) Piercing damage.",
         "Blinding Spittle (Recharge 5–6).",
         "Dexterity Saving Throw: DC 10",
     ),
@@ -53,6 +50,7 @@ class MotorCombateFichasSRD(MotorFichasPOC, MotorCondicoesSRD):
     """Mesmo estado event-sourced do motor de preparo; combate parcial v2.4."""
 
     def _get_combat_pair(self, s):
+        membros = {}
         for jogador, cid in PARES.items():
             if s["jogadores"][jogador]["criatura_ativa_id"] != cid:
                 raise UnresolvedRule(
@@ -87,7 +85,18 @@ class MotorCombateFichasSRD(MotorFichasPOC, MotorCondicoesSRD):
                 raise UnresolvedRule(
                     "ação, resistência ou traço ausente na ficha consultada"
                 )
-        return super()._get_combat_pair(s)
+            try:
+                perfil = extrair_perfil_de_combate(ficha)
+            except FichaConflitante as exc:
+                raise UnresolvedRule(
+                    "perfil de combate não extraível do catálogo: " + str(exc)
+                ) from exc
+            if set(card["condicoes"]) - {"Blinded"}:
+                raise UnresolvedRule("condição fora do recorte integrado")
+            if any(e.get("tipo") != "BLINDED_SPITTLE" for e in card["efeitos"]):
+                raise UnresolvedRule("efeito fora do recorte integrado")
+            membros[jogador] = (cid, perfil)
+        return membros
 
     def _iniciar_gibbering_78(self, s, actor, params):
         """SRD 5.2.1, p.288: 7-8 força ataque em criatura no alcance.
