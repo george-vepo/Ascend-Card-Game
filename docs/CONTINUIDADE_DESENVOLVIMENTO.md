@@ -1,6 +1,6 @@
 # Ascend Card Game — checkpoint verificável de desenvolvimento
 
-**Atualizado:** 2026-10-19. **Base de código:** `main` após o PR #18; commit `71971a0873523374f4c0a52e6652f017789bcdc0`.
+**Atualizado:** 2026-10-19. **Base de código:** `main` após o PR #21; commit `7b0cda4950abdbdc1fd202d0f129345d2566e989`.
 
 ## Fonte da verdade e arquitetura
 
@@ -21,8 +21,9 @@
 | [PR #16](https://github.com/george-vepo/Ascend-Card-Game/pull/16) | Reel: pré-validação pura; movimento bloqueado | `186c5d0da6af04d4e893f5b811e9ba803063ca78` | Histórico do PR |
 | [PR #17](https://github.com/george-vepo/Ascend-Card-Game/pull/17) | KO libera Grappled/Poisoned/tentáculos e valida checkpoints | `a1c8cad2ff77fa7038e3ffc7a5d6a8e8c07b646c` | [126 testes aprovados](https://github.com/george-vepo/Ascend-Card-Game/actions/runs/39324566200) e [81 testes de regressão](https://github.com/george-vepo/Ascend-Card-Game/actions/runs/39324566217) |
 | [PR #18](https://github.com/george-vepo/Ascend-Card-Game/pull/18) | Multiattack: sequência verificada, execução bloqueada | `71971a0873523374f4c0a52e6652f017789bcdc0` | [138 testes aprovados](https://github.com/george-vepo/Ascend-Card-Game/actions/runs/39325453504) e [81 testes de regressão](https://github.com/george-vepo/Ascend-Card-Game/actions/runs/39325453465) |
+| [PR #21](https://github.com/george-vepo/Ascend-Card-Game/pull/21) | Sem arena nem alcance; Reel individual sem deslocamento; Multiattack ainda bloqueado por composição | `7b0cda4950abdbdc1fd202d0f129345d2566e989` | [138 testes aprovados](https://github.com/george-vepo/Ascend-Card-Game/actions/runs/39327919830) e [81 testes de regressão](https://github.com/george-vepo/Ascend-Card-Game/actions/runs/39327919896); cinco workflows verdes |
 
-**Contagens dos workflows:** os 81 testes da suíte de fuga/destruição são repetidos parcialmente no workflow principal. Não somar esses totais como testes independentes. Cinco workflows do PR #18 foram aprovados: Roper, fuga/destruição, estrutura, ponte e referências do Catálogo SRD.
+**Contagens dos workflows:** os 81 testes da suíte de fuga/destruição são repetidos parcialmente no workflow principal. Não somar esses totais como testes independentes. Cinco workflows do PR #21 foram aprovados: Roper, fuga/destruição, estrutura, ponte e referências do Catálogo SRD.
 
 ## Arquivos e módulos atuais relevantes
 
@@ -36,13 +37,13 @@
 
 ## Estado mecânico e bloqueios
 
-**No recorte experimental:** Bite e Tentacle individuais, Grappled/Poisoned, fuga com desvantagem Poisoned, ataque e destruição/regeneração de tentáculos, limpeza de vínculos em KO e preflight puro de Reel e Multiattack. Todos exigem fontes verificadas e não são combate SRD integral.
+**No recorte experimental:** Bite e Tentacle individuais (sem exigência de alcance), Grappled/Poisoned, fuga com desvantagem Poisoned, ataque e destruição/regeneração de tentáculos, limpeza de vínculos em KO, preflight puro de Reel/Multiattack e Action Reel individual executável **sem deslocamento** quando há Grappled válido. Todos exigem fontes verificadas e não são combate SRD integral.
 
-**DECISÃO JÁ VIGENTE DESDE 15/10/2026, RATIFICADA EM 19/10/2026:** nenhum combate usa posição, arena, distância ou checagem de alcance espacial. Ver contrato `docs/poc/01_Regras/CONTRATO_DE_REGRAS.md` e [Issue #19 encerrada](https://github.com/george-vepo/Ascend-Card-Game/issues/19). A ausência de arena jamais bloqueia uma ação. A branch `fix/roper-sem-posicionamento-poc` corrige verificações espaciais no motor experimental, habilitando Reel individual como Action sem deslocamento; confirmar CI e merge antes de tratar como integrado.
+**DECISÃO JÁ VIGENTE DESDE 15/10/2026, RATIFICADA EM 19/10/2026:** nenhum combate usa posição, arena, distância ou checagem de alcance espacial. Ver contrato `docs/poc/01_Regras/CONTRATO_DE_REGRAS.md` e [Issue #19 encerrada](https://github.com/george-vepo/Ascend-Card-Game/issues/19). A ausência de arena jamais bloqueia uma ação. O [PR #21](https://github.com/george-vepo/Ascend-Card-Game/pull/21) removeu as verificações espaciais e habilitou Reel individual como Action sem deslocamento, com cinco workflows verdes e merge confirmado na `main`.
 
 **PENDENTE:** Multiattack executável (segunda Tentacle no mesmo alvo, sequência completa como uma Action), Spider Climb e demais componentes SRD ainda não suportados. O deslocamento posicional/vôo/arena **não será implementado**; efeitos não espaciais dessas habilidades exigem ficha e contrato verificáveis.
 
-**Próximo incremento seguro:** corrigir e integrar com CI as chamadas que exigiam `alvo_no_alcance_fixture` ou arena indevidamente. Em seguida, implementar Multiattack por etapas verificadas com testes e economia de uma Action, sem arena e sem criar mecânicas de movimento. Não recriar o que já está integrado.
+**Próximo incremento seguro:** implementar, em PRs pequenos e testáveis, a segunda Tentacle no mesmo alvo e a composição integral do Multiattack em **uma Action**, sem arena ou mecânica espacial. As checagens de `alvo_no_alcance_fixture` já foram removidas no PR #21; não recriar o que já está integrado.
 
 **Partida oficial:** não iniciada. **Placar oficial:** J1 0 × 0 J2. **Rolagens em CI:** simuladas, externas e explícitas. Não publicar mãos, decks privados, ordem de montes nem snapshots de estado competitivo real.
 
