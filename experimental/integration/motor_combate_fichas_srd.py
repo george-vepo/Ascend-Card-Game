@@ -85,15 +85,33 @@ class MotorCombateFichasSRD(MotorFichasPOC, MotorCondicoesSRD):
         return super()._get_combat_pair(s)
 
     def _transition(self, s, actor, command, params):
-        if command == "ATAQUE_V24_TESTE":
-            reach = params.get("alvo_no_alcance_fixture")
-            if type(reach) is not bool:
-                raise UnresolvedRule(
-                    "alcance do ataque não estabelecido: confirmar fixture"
-                )
-            if not reach:
-                raise InvalidAction("alvo fora do alcance confirmado em fixture")
-        return super()._transition(s, actor, command, params)
+        # As versões v2.2/v2.3 carregam MotorPOC de módulos Python distintos
+        # (motor_poc versus motor_base_v22). Um super() linear aqui desviaria
+        # iniciativa/ataque para a implementação base, "comando desconhecido".
+        # Roteamos explicitamente SOMENTE as ações do recorte já testado.
+        combate = {
+            "INICIATIVA_SRD_TESTE",
+            "INICIO_TURNO_V24_TESTE",
+            "ATAQUE_V24_TESTE",
+            "BLINDING_SPITTLE_V24_TESTE",
+            "PASSAR_TURNO_V24_TESTE",
+            # atalhos legados permanecem proibidos pelo módulo v2.4
+            "ATAQUE_SRD_TESTE", "INICIATIVA_FIXTURE",
+            "RODADA_SEGUINTE_FIXTURE", "KO_COMBATE_FIXTURE",
+        }
+        if command in combate:
+            if command == "ATAQUE_V24_TESTE":
+                reach = params.get("alvo_no_alcance_fixture")
+                if type(reach) is not bool:
+                    raise UnresolvedRule(
+                        "alcance do ataque não estabelecido: confirmar fixture"
+                    )
+                if not reach:
+                    raise InvalidAction(
+                        "alvo fora do alcance confirmado em fixture"
+                    )
+            return MotorCondicoesSRD._transition(self, s, actor, command, params)
+        return MotorFichasPOC._transition(self, s, actor, command, params)
 
     def checkpoint(self):
         """Formato v2.2 base para restauração verificável da camada integrada.
