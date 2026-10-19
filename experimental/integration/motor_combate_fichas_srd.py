@@ -17,6 +17,10 @@ from motor_condicoes_srd import MotorCondicoesSRD
 from motor_poc import (
     MotorPOC, InvalidAction, UnresolvedRule, SIDES,
 )
+from motor_base_v22 import (
+    InvalidAction as InvalidActionV22,
+    UnresolvedRule as UnresolvedRuleV22,
+)
 
 PARES = {"J1": "CE-001", "J2": "AB-POC-008"}
 ESCOPO = "EFEITOS_SRD_PARCIAIS_TESTE"
@@ -110,7 +114,14 @@ class MotorCombateFichasSRD(MotorFichasPOC, MotorCondicoesSRD):
                     raise InvalidAction(
                         "alvo fora do alcance confirmado em fixture"
                     )
-            return MotorCondicoesSRD._transition(self, s, actor, command, params)
+            try:
+                return MotorCondicoesSRD._transition(self, s, actor, command, params)
+            except UnresolvedRuleV22 as exc:
+                # Compatibilidade: a v2.4 usa outro objeto de classe-base.
+                # A API nova preserva PENDENTE sem mutar o estado.
+                raise UnresolvedRule(str(exc)) from exc
+            except InvalidActionV22 as exc:
+                raise InvalidAction(str(exc)) from exc
         return MotorFichasPOC._transition(self, s, actor, command, params)
 
     def checkpoint(self):
