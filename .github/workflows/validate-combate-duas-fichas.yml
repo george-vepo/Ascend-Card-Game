@@ -36,4 +36,6 @@ jobs:
       - name: Conferir fichas, iniciativa, turnos, ataques e efeitos SRD no recorte
         env:
           CATALOGO_SRD_DIR: external/Catalogo-SRD
-        run: python -m unittest discover -s tests/integration -p test_combate_duas_fichas_reais.py -v
+        run: |
+          python -m unittest discover -s tests/integration -p test_combate_duas_fichas_reais.py -v
+          python -m unittest discover -s tests/integration -p test_gibbering_78_real.py -v

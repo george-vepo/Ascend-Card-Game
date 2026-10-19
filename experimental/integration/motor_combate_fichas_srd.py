@@ -39,6 +39,7 @@ FRASES_OBRIGATORIAS = {
     "AB-POC-008": (
         "Medium Aberration",
         "Gibbering.",
+        "7–8. The target makes a melee attack against a randomly determined creature within its reach",
         "Wisdom Saving Throw: DC 10",
         "Bite. Melee Attack Roll: +2, reach 5 ft.",
         "Hit: 7 (2d6) Piercing damage.",
@@ -88,7 +89,155 @@ class MotorCombateFichasSRD(MotorFichasPOC, MotorCondicoesSRD):
                 )
         return super()._get_combat_pair(s)
 
+    def _iniciar_gibbering_78(self, s, actor, params):
+        """SRD 5.2.1, p.288: 7-8 força ataque em criatura no alcance.
+
+        Na POC existem dois combatentes; havendo apenas o Mouther elegível,
+        ele é o único alvo possível. A geometria NÃO é inferida: o árbitro
+        precisa informar explicitamente a elegibilidade do alvo.
+        """
+        v = MotorCondicoesSRD._ready(self, s, actor)
+        self._get_combat_pair(s)
+        if actor != "J1" or not v["pendente_inicio"]:
+            raise InvalidAction("Gibbering 7–8 só no início do turno da Giant Owl")
+        if params.get("aceite_escopo") != ESCOPO:
+            raise UnresolvedRule("escopo parcial de combate deve ser aceito")
+        if params.get("gibbering_aplicavel_fixture") is not True:
+            raise InvalidAction("rolagem 7–8 exige gatilho Gibbering confirmado")
+        wis = params.get("wis_d20_simulado")
+        d8 = params.get("gibbering_d8_simulado")
+        if not self._die(wis, 20) or wis + 4 >= 10:
+            raise InvalidAction("resultado 7–8 requer falha real em SAB CD 10")
+        if type(d8) is not int or d8 not in (7, 8):
+            raise InvalidAction("somente resultados 7 e 8 deste evento")
+        ao_alcance = params.get("mouther_ao_alcance_fixture")
+        if type(ao_alcance) is not bool:
+            raise UnresolvedRule("confirmar se o único alvo externo está a até 5 pés")
+
+        # Aplicamos ao estado PROPOSTO pelo motor: nada é gravado se uma
+        # pré-condição, fonte ou dado simulado falhar.
+        v["turnos_iniciados"]["J1"] += 1
+        v["pendente_inicio"] = False
+        v["inicio_resolvido"] = True
+        v["bloqueado"] = True  # impede ataque voluntário no mesmo turno
+        v["ataque_forcado"] = (
+            {"ator": "J1", "alvo": "AB-POC-008", "ataque": "Talons",
+             "d8": d8} if ao_alcance else None
+        )
+        v["gibbering_sem_alvo"] = not ao_alcance
+        return {
+            "ator": "J1", "dados_simulados": True,
+            "numero_turno_proprio": v["turnos_iniciados"]["J1"],
+            "gibbering_sab": {"d20": wis, "bonus": 4, "total": wis + 4,
+                              "cd": 10, "sucesso": False},
+            "gibbering_resultado_d8": d8,
+            "mouther_ao_alcance_fixture": ao_alcance,
+            "acao_exigida": ("RESOLVER_ATAQUE_FORCADO_GIBBERING_TESTE"
+                             if ao_alcance else "PASSAR_TURNO_V24_TESTE"),
+            "alvo_unico_elegivel": "AB-POC-008" if ao_alcance else None,
+            "alvo_sorteado": False,  # um único elegível dispensa sorteio
+            "turno_com_acao_livre": False,
+        }
+
+    def _resolver_gibbering_78(self, s, actor, params):
+        v = MotorCondicoesSRD._ready(self, s, actor)
+        members = self._get_combat_pair(s)
+        forcado = v.get("ataque_forcado")
+        if (actor != "J1" or not v["inicio_resolvido"]
+                or not isinstance(forcado, dict)
+                or forcado.get("alvo") != "AB-POC-008"):
+            raise InvalidAction("não há ataque forçado pendente para este turno")
+        if params.get("aceite_escopo") != ESCOPO:
+            raise UnresolvedRule("confirmar escopo mecânico parcial")
+        if params.get("alvo_id") != "AB-POC-008":
+            raise InvalidAction("o alvo é o único inimigo elegível, AB-POC-008")
+        if params.get("ataque") != "Talons":
+            raise InvalidAction("a única ação corpo a corpo da coruja é Talons")
+
+        src = members["J1"][1]
+        target = members["J2"][1]
+        atk = src["attack"]
+        owl_card = self.get_card(s, "J1", "CE-001")
+        mouther_card = self.get_card(s, "J2", "AB-POC-008")
+        # Reutiliza a regra SRD de Blinded; vantagem/desvantagem se cancelam.
+        own_blind = "Blinded" in owl_card["condicoes"]
+        target_blind = "Blinded" in mouther_card["condicoes"]
+        modo = ("NORMAL" if own_blind == target_blind else
+                "DESVANTAGEM" if own_blind else "VANTAGEM")
+        rolls = params.get("d20_simulados")
+        quantidade = 1 if modo == "NORMAL" else 2
+        if (not isinstance(rolls, list) or len(rolls) != quantidade or
+                not all(self._die(x, 20) for x in rolls)):
+            raise InvalidAction(f"{modo}: exige {quantidade} d20 simulado(s)")
+        d20 = (min(rolls) if modo == "DESVANTAGEM" else
+               max(rolls) if modo == "VANTAGEM" else rolls[0])
+        total = d20 + atk["bonus"]
+        critico = d20 == 20
+        acertou = critico or (d20 != 1 and total >= target["ac"])
+        quantidade_dano = atk["dice"][0] * (2 if critico else 1) if acertou else 0
+        dice = params.get("dano_dados", [])
+        if (not isinstance(dice, list) or len(dice) != quantidade_dano
+                or not all(self._die(x, atk["dice"][1]) for x in dice)):
+            raise InvalidAction(
+                f"Talons: exige {quantidade_dano} d10 simulados para este resultado"
+            )
+        bruto = sum(dice) + atk["flat"] if acertou else 0
+        if atk["type"] in target["immunities"]:
+            aplicado = 0
+        elif atk["type"] in target["resistances"]:
+            aplicado = bruto // 2
+        else:
+            aplicado = bruto
+        antes = mouther_card["pv_atual"]
+        mouther_card["pv_atual"] = max(0, antes - aplicado)
+        # Ataque forçado consome a resolução do turno neste recorte.
+        v["ataque_forcado"] = None
+        v["gibbering_sem_alvo"] = False
+        result = {
+            "gatilho": "Gibbering d8 7–8",
+            "ator": "J1", "alvo": "J2", "carta_alvo": "AB-POC-008",
+            "ataque": "Talons", "seleção_alvo": "UNICO_ELEGIVEL",
+            "origem_dados": "DADOS_SIMULADOS_TESTE",
+            "gibbering_d8": forcado["d8"],
+            "modo_rolagem": modo, "d20_simulados": list(rolls),
+            "d20_aplicado": d20, "bonus_ataque": atk["bonus"],
+            "total_ataque": total, "ca_alvo": target["ac"],
+            "acertou": acertou, "critico": critico, "dados_dano": list(dice),
+            "dano_bruto": bruto, "dano_aplicado": aplicado,
+            "pv_antes": antes, "pv_depois": mouther_card["pv_atual"],
+            "turno_com_acao_livre": False,
+        }
+        if mouther_card["pv_atual"] == 0:
+            self._ko(s, "J1", "FIXTURE_SRD_GIBBERING_78_ALVO_UNICO")
+            result["ko"] = True
+        else:
+            result.update(MotorCondicoesSRD._finish_turn(self, s, actor))
+            result["ko"] = False
+        return result
+
     def _transition(self, s, actor, command, params):
+        if (command == "INICIO_TURNO_V24_TESTE" and actor == "J1"
+                and params.get("gibbering_d8_simulado") in (7, 8)):
+            return self._iniciar_gibbering_78(s, actor, params)
+        if command == "RESOLVER_ATAQUE_FORCADO_GIBBERING_TESTE":
+            return self._resolver_gibbering_78(s, actor, params)
+        v = s.get("combate", {}).get("v24")
+        if v and v.get("ataque_forcado"):
+            if command in {
+                "ATAQUE_V24_TESTE", "PASSAR_TURNO_V24_TESTE",
+                "INICIO_TURNO_V24_TESTE",
+            }:
+                raise InvalidAction(
+                    "resolver primeiro o ataque forçado de Gibbering"
+                )
+        if (v and v.get("gibbering_sem_alvo")
+                and command == "PASSAR_TURNO_V24_TESTE"):
+            result = MotorCondicoesSRD._transition(
+                self, s, actor, command, params
+            )
+            v["gibbering_sem_alvo"] = False
+            result["passou_por"] = "Gibbering 7–8 sem alvo ao alcance"
+            return result
         # As versões v2.2/v2.3 carregam MotorPOC de módulos Python distintos
         # (motor_poc versus motor_base_v22). Um super() linear aqui desviaria
         # iniciativa/ataque para a implementação base, "comando desconhecido".
@@ -123,6 +272,18 @@ class MotorCombateFichasSRD(MotorFichasPOC, MotorCondicoesSRD):
             except InvalidActionV22 as exc:
                 raise InvalidAction(str(exc)) from exc
         return MotorFichasPOC._transition(self, s, actor, command, params)
+
+    def public(self):
+        data = MotorCondicoesSRD.public(self)
+        v = self.state.get("combate", {}).get("v24")
+        if v is not None and self.state.get("fase") == "COMBATE":
+            data.setdefault("efeitos_combate", {})["gibbering_forcado"] = (
+                "ATAQUE_TALONS_PENDENTE"
+                if v.get("ataque_forcado") else
+                "SEM_ALVO_PASSAR_TURNO"
+                if v.get("gibbering_sem_alvo") else None
+            )
+        return data
 
     def checkpoint(self):
         """Formato v2.2 base para restauração verificável da camada integrada.
