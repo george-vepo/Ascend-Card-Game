@@ -14,7 +14,8 @@ A fixture `MotorRoperBasico` encerrava o combate e movia a criatura derrotada pa
 ## Testes e CI
 - Novos casos em `tests/integration/test_roper_ko_grapple_cleanup_real.py`: 9 cenários, com dados explicitamente **simulados** e checkout pinado real do catálogo.
 - CI: `.github/workflows/validate-roper-basico.yml` executa os novos testes **e** as regressões de Bite, Tentacle, fuga/destruição, rolagens, Poisoned e Reel.
-- Status de CI/merge: **a registrar após os workflows**. Não declarar testes concluídos antes de confirmação.
+- CI verificada no PR [#17](https://github.com/george-vepo/Ascend-Card-Game/pull/17): workflow principal do Roper **126/126** testes (inclui 9 novos) e workflow de fuga/destruição **81/81**, sem falhas; workflows estrutura, Catálogo SRD e ponte de identidades também passaram. Alguns testes são repetidos entre workflows.
+- Merge: consultar PR #17 para o SHA definitivo de integração na `main` (não presumir antes do merge).
 
 ## Ainda não implementado
 - Reel com deslocamento: depende de arena/posições e decisão administrativa.
