@@ -1,0 +1,604 @@
+{
+  "schema": "SRD_POC_CASOS_TESTE_V2_1",
+  "testes": [
+    {
+      "id": "CT-01",
+      "cenario": "Reservar suporte existente na mão",
+      "resultado_esperado": "marca cópia na mão; sem compra; 1 referência; mesma versão só após aceitação",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-02",
+      "cenario": "Reservar segunda carta no mesmo combate",
+      "resultado_esperado": "REJEITADA; nenhuma mudança",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-03",
+      "cenario": "Tentar invocar cópia reservada",
+      "resultado_esperado": "REJEITADA; cópia permanece na mão",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-04",
+      "cenario": "Resolver suporte do PRIMEIRO antes de iniciativa",
+      "resultado_esperado": "ACEITA com habilidade homologada; resolução pré-batalha sem consumir ações; suporte descartado sem compra imediata; saque simétrico na abertura da rodada a definir (Q-17).",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null,
+      "nota_revisao_POC18": "Regra v1.8 supera compra pós-combate e fase extra sobrevivente: ambos sacam no início da rodada, com Q-17 ainda em aberto. Não executar interpretação histórica."
+    },
+    {
+      "id": "CT-05",
+      "cenario": "Resolver suporte do SEGUNDO antes de iniciativa",
+      "resultado_esperado": "ACEITA somente se carta/efeito homologado e requisitos atendidos após o efeito anterior; registrar ordem",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-06",
+      "cenario": "Tentar ativar suporte dentro de turno de combate",
+      "resultado_esperado": "REJEITADA, pois v1.3 substitui janela anterior; estado inalterado",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-07",
+      "cenario": "Ativar habilidade candidata não homologada",
+      "resultado_esperado": "PENDENTE; não aplicar efeito nem descartar",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-08",
+      "cenario": "Usar suporte homologado e descartar",
+      "resultado_esperado": "Suporte aplicado uma vez e descartado; sem compra imediata. Saque de ambos ocorre somente no início da rodada definida por Q-17.",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null,
+      "nota_revisao_POC18": "Regra v1.8 supera compra pós-combate e fase extra sobrevivente: ambos sacam no início da rodada, com Q-17 ainda em aberto. Não executar interpretação histórica."
+    },
+    {
+      "id": "CT-09",
+      "cenario": "Sem suporte confirmado na etapa 4 ou 5",
+      "resultado_esperado": "PULAR a respectiva resolução 6/7; nenhuma carta move ou é comprada",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-10",
+      "cenario": "Repetir evento com mesmo id",
+      "resultado_esperado": "não executar segunda vez; apontar resultado anterior",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-11",
+      "cenario": "Sorteio da prioridade, embaralhamento e compras iniciais",
+      "resultado_esperado": "Sorteio separado da iniciativa, rastreado; montes 40 e mãos 5 após autorização; hoje não executar",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-12",
+      "cenario": "Troca de 0 a 5 cartas",
+      "resultado_esperado": "descartar igual número comprado do topo; sem sexta carta",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-13",
+      "cenario": "Invocar carta não comum",
+      "resultado_esperado": "REJEITADA; estado inalterado",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-14",
+      "cenario": "Evolução saltando classe ou trocando tipo",
+      "resultado_esperado": "REJEITADA; estado inalterado",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-15",
+      "cenario": "Evolução legal",
+      "resultado_esperado": "anterior cemitério; evoluída PV máximo; uma ativa",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-16",
+      "cenario": "IA tenta usar mão do humano taticamente",
+      "resultado_esperado": "proibir uso de informações ocultas; registrar limitação de isolamento",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-17",
+      "cenario": "Criatura derrotada",
+      "resultado_esperado": "vai cemitério; vencedor +1; sobrevivente mantém PV",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null,
+      "nota_revisao_POC18": "Regra v1.8 supera compra pós-combate e fase extra sobrevivente: ambos sacam no início da rodada, com Q-17 ainda em aberto. Não executar interpretação histórica."
+    },
+    {
+      "id": "CT-18",
+      "cenario": "Terceira vitória",
+      "resultado_esperado": "encerrar partida; impedir ações extras",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-19",
+      "cenario": "Monte acaba durante compra",
+      "resultado_esperado": "não inventar carta; pedir decisão competitiva quando aplicável",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-20",
+      "cenario": "Efeitos de alcance/movimento",
+      "resultado_esperado": "aplicar adaptação aprovada sem ignorar requisitos não espaciais",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-21",
+      "cenario": "J1 confirma Sem suporte na fase de seleção",
+      "resultado_esperado": "ACEITA; suporte_reservado_id null; não reserva, move, compra nem descarta cartas; fase segue após confirmações",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-22",
+      "cenario": "J2 IA confirma Sem suporte e atua sem suporte no combate",
+      "resultado_esperado": "ACEITA; mesmo tratamento 0–1 do J1; nenhuma ativação de suporte permitida para J2 nesse combate; não revela a mão",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-23",
+      "cenario": "Jogador sem carta de suporte homologada confirma Sem suporte",
+      "resultado_esperado": "ACEITA; permite avançar sem habilitar efeitos candidatos; nenhuma carta se move",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-24",
+      "cenario": "Sorteio de PRIMEIRO/SEGUNDO diferente de iniciativa",
+      "resultado_esperado": "Preparação segue sorteio; combate obedece iniciativa SRD independentemente",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-25",
+      "cenario": "Troca de cartas dos dois jogadores",
+      "resultado_esperado": "PRIMEIRO troca 0–5 e depois SEGUNDO troca 0–5; ambas mãos privadas",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-26",
+      "cenario": "Ordem de seleção da criatura",
+      "resultado_esperado": "PRIMEIRO escolhe criatura e depois SEGUNDO; regras de invocação e evolução preservadas",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-27",
+      "cenario": "Ordem de seleção dos suportes",
+      "resultado_esperado": "PRIMEIRO escolhe 0/1 suporte e depois SEGUNDO escolhe 0/1; reserva não compra nem muda zona",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-28",
+      "cenario": "Resolução pré-batalha dos suportes",
+      "resultado_esperado": "Suporte PRIMEIRO resolvido/pulado antes do SEGUNDO; ambos antes da iniciativa; sem reaplicar no combate",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-29",
+      "cenario": "Efeito do primeiro suporte inviabiliza o segundo",
+      "resultado_esperado": "PENDENTE sem aplicar efeito inválido, descarte automático ou vitória inventada",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-30",
+      "cenario": "Suporte reduz criatura a zero PV antes da iniciativa",
+      "resultado_esperado": "PENDENTE, sem conceder ponto ou iniciar batalha por analogia",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-31",
+      "cenario": "Efeito de suporte requer turno/iniciativa",
+      "resultado_esperado": "PENDENTE até homologação específica de uso pré-batalha",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-32",
+      "cenario": "Continuidade da rodada após ambos agirem",
+      "resultado_esperado": "Se combate continua, preservar iniciativa e recursos sem repetir seleção de suporte",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-33",
+      "cenario": "Preparação após primeira vitória parcial",
+      "resultado_esperado": "Novo ciclo somente após KO e se não houver terceiro ponto; preservar zonas/PV; início desse ciclo repõe ambas as mãos até 5 antes da troca; ordem PRIMEIRO/SEGUNDO fixa.",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null,
+      "nota_revisao_POC18": "Regra v1.8 supera compra pós-combate e fase extra sobrevivente: ambos sacam no início da rodada, com Q-17 ainda em aberto. Não executar interpretação histórica."
+    },
+    {
+      "id": "CT-34",
+      "cenario": "Combate continua após uma rodada com ambas acima de 0 PV",
+      "resultado_esperado": "mesma iniciativa e combate; conservar PV/recursos/condições; não reabrir suporte",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-35",
+      "cenario": "KO durante batalha encerra somente combate",
+      "resultado_esperado": "derrotada ao cemitério; +1 apenas; sobrevivente mantém PV e campo",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null,
+      "nota_revisao_POC18": "Regra v1.8 supera compra pós-combate e fase extra sobrevivente: ambos sacam no início da rodada, com Q-17 ainda em aberto. Não executar interpretação histórica."
+    },
+    {
+      "id": "CT-36",
+      "cenario": "Primeiro KO abre outro ciclo, sem bônus ao sobrevivente",
+      "resultado_esperado": "Se placar abaixo de 3, abrir novo ciclo e repor mãos de ambos até 5 somente em sua abertura; sem fase extra da sobrevivente.",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null,
+      "nota_revisao_POC18": "Regra v1.8 supera compra pós-combate e fase extra sobrevivente: ambos sacam no início da rodada, com Q-17 ainda em aberto. Não executar interpretação histórica."
+    },
+    {
+      "id": "CT-37",
+      "cenario": "Terceira vitória encerra duelo",
+      "resultado_esperado": "encerra imediatamente e não começa novo ciclo",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-38",
+      "cenario": "Tentativa de ativar novamente suporte por rodada",
+      "resultado_esperado": "REJEITADA; suporte pré-batalha não se repete durante rodadas internas",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-39",
+      "cenario": "Tentativa de sortear novamente PRIMEIRO/SEGUNDO no novo ciclo",
+      "resultado_esperado": "REJEITADA; preservar PRIMEIRO/SEGUNDO do sorteio inicial e não gerar novo evento de sorteio da prioridade.",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-40",
+      "cenario": "Prioridade inicial ainda não sorteada antes da autorização",
+      "resultado_esperado": "primeiro e segundo nulos; nenhum sorteio, embaralhamento ou compra executados",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-41",
+      "cenario": "Um único sorteio define PRIMEIRO/SEGUNDO durante todo duelo",
+      "resultado_esperado": "primeiro e segundo distintos, evento registrado, ordem fixa até a vitória final",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-42",
+      "cenario": "Nova iniciativa SRD em cada novo combate",
+      "resultado_esperado": "iniciativa independente da prioridade fixa de preparação, sem alterar PRIMEIRO/SEGUNDO",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-43",
+      "cenario": "Mesma iniciativa durante rodadas sucessivas do mesmo combate",
+      "resultado_esperado": "não rolar novamente apenas por início de rodada; efeitos oficiais que alterem iniciativa seguem ficha/SRD",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-44",
+      "cenario": "Duas ou mais evoluções sucessivas legais, com cartas já disponíveis",
+      "resultado_esperado": "ACEITAR cada passo legal mesmo se for 2+ evoluções; registrar separadamente antigo cemitério/nova ativa PV máximos, sem limite numérico",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-45",
+      "cenario": "Tentar evolução saltando classe depois de uma evolução válida",
+      "resultado_esperado": "REJEITADA a tentativa de salto; etapas anteriores já confirmadas não são revertidas por inferência; nenhuma compra artificial",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-46",
+      "cenario": "Encerrar voluntariamente evolução antes da Mítica",
+      "resultado_esperado": "ACEITA; não obrigar novas evoluções nem descartar cartas não escolhidas",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-47",
+      "cenario": "Tentar evoluir a Mítica ou usar carta de outro tipo",
+      "resultado_esperado": "REJEITADA; não existe classe acima de Mítica e mesmo tipo é obrigatório",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-48",
+      "cenario": "Nova carta aparece apenas se houver reposição intermediária",
+      "resultado_esperado": "REJEITAR reposição automática intermediária; evolução só se próxima cópia já estava disponível na mão. Q-15 resolvida pela POC-17.",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null,
+      "nota_revisao_POC18": "Regra v1.8 supera compra pós-combate e fase extra sobrevivente: ambos sacam no início da rodada, com Q-17 ainda em aberto. Não executar interpretação histórica."
+    },
+    {
+      "id": "CT-49",
+      "cenario": "Integridade das zonas em sequência de evoluções",
+      "resultado_esperado": "Cada evento conserva 40 IDs únicos por lado; uma ativa; carta anterior ao cemitério e carta usada da mão ao campo",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-50",
+      "cenario": "Invocação não repõe a mão",
+      "resultado_esperado": "Cópia da mão vai ao campo; nenhuma compra de reposição, monte sem alteração por esse motivo.",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null,
+      "nota_revisao_POC18": "Regra v1.8 supera compra pós-combate e fase extra sobrevivente: ambos sacam no início da rodada, com Q-17 ainda em aberto. Não executar interpretação histórica."
+    },
+    {
+      "id": "CT-51",
+      "cenario": "Evoluções sucessivas não repõem a mão",
+      "resultado_esperado": "Cartas já possuídas na mão permitem evoluções legais; não comprar entre passos nem no fim da cadeia.",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-52",
+      "cenario": "Suporte pré-batalha não repõe a mão",
+      "resultado_esperado": "Após efeito homologado, suporte vai ao cemitério; mão diminui uma, monte não diminui por reposição.",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null,
+      "nota_revisao_POC18": "Regra v1.8 supera compra pós-combate e fase extra sobrevivente: ambos sacam no início da rodada, com Q-17 ainda em aberto. Não executar interpretação histórica."
+    },
+    {
+      "id": "CT-53",
+      "cenario": "Rodadas do mesmo combate não geram reposição",
+      "resultado_esperado": "Sem KO, nenhuma reposição ao passar rodada; iniciativa, zonas e PV preservados.",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null,
+      "nota_revisao_POC18": "Regra v1.8 supera compra pós-combate e fase extra sobrevivente: ambos sacam no início da rodada, com Q-17 ainda em aberto. Não executar interpretação histórica."
+    },
+    {
+      "id": "CT-54",
+      "cenario": "Reposição de ambos apenas no início do novo ciclo",
+      "resultado_esperado": "Ao KO não comprar; após abrir próximo ciclo (se não é terceiro ponto), completar mãos J1/J2 até 5 do topo, respeitando disponibilidade; não duplicar.",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-55",
+      "cenario": "Mão inicial e troca permanecem compras permitidas",
+      "resultado_esperado": "Distribuir 5 após embaralhamento autorizado; na troca, comprar só o número de descartadas, sem confundir com reposição automática.",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null,
+      "nota_revisao_POC18": "Regra v1.8 supera compra pós-combate e fase extra sobrevivente: ambos sacam no início da rodada, com Q-17 ainda em aberto. Não executar interpretação histórica."
+    },
+    {
+      "id": "CT-56",
+      "cenario": "Não há saque adicional exclusivo da criatura sobrevivente após KO",
+      "resultado_esperado": "Nenhum saque especial ocorre; a sobrevivente continua com PV remanescentes",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-57",
+      "cenario": "KO não dispara saque",
+      "resultado_esperado": "Registrar KO/placar/cemitério sem compra; saque só no evento de INICIO_CICLO seguinte quando houver continuidade.",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-58",
+      "cenario": "Janela de saque definida como abertura de novo ciclo",
+      "resultado_esperado": "Repor cada mão até 5 antes da troca, uma única vez por jogador e por ciclo; manter ocultas as cartas de J2.",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-59",
+      "cenario": "Q-17 resolvida: rejeitar saque por rodada interna",
+      "resultado_esperado": "Com uma rodada interna de combate começando, NÃO comprar nem marcar PENDENTE por Q-17; seguir iniciativa normalmente.",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-60",
+      "cenario": "Impedir compra duplicada em um mesmo ciclo",
+      "resultado_esperado": "Reexecutar mesmo INICIO_CICLO não compra mais nada; não comprar no KO anterior nem no encerramento por terceiro ponto.",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-61",
+      "cenario": "Início do ciclo 1 sem saque duplicado",
+      "resultado_esperado": "Setup distribui cinco iniciais após autorização; abertura do primeiro ciclo não compra novamente.",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-62",
+      "cenario": "Nova rodada do mesmo combate sem saque",
+      "resultado_esperado": "Ambos permanecem com a mesma mão e monte quando se inicia a segunda rodada interna; não criar evento SAQUE_CICLO.",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-63",
+      "cenario": "Saque de ambos após KO e antes da troca",
+      "resultado_esperado": "KO não compra; abre novo ciclo, completa as duas mãos até 5 e só então permite troca.",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-64",
+      "cenario": "Mão cheia e monte insuficiente",
+      "resultado_esperado": "Mão de 5 compra 0; mão de 3 com apenas 1 no monte compra 1; não cria 6ª carta nem inventa cópia.",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-65",
+      "cenario": "Terceiro ponto não inicia saque",
+      "resultado_esperado": "Resultado 3 pontos encerra duelo: zero abertura de novo ciclo e zero compra.",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-66",
+      "cenario": "Saque de ciclo idempotente e simétrico",
+      "resultado_esperado": "Para cada ciclo elegível, processar J1 e J2 exatamente uma vez; não expor cartas do adversário; preservar 40 IDs em suas zonas.",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-67",
+      "cenario": "KO causado pelo PRIMEIRO suporte antes da iniciativa",
+      "resultado_esperado": "Se a habilidade for individualmente homologada e chegar a 0 PV adversários, descartar suporte 1, +1 ponto, derrotada ao cemitério e encerrar combate imediatamente.",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-68",
+      "cenario": "Segundo suporte reservado não é ativado após KO do PRIMEIRO",
+      "resultado_esperado": "A cópia segundo suporte fica na MAO com reserva liberada; não vai ao cemitério nem altera mão/monte; se de IA, permanece oculta.",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-69",
+      "cenario": "Não realizar iniciativa após KO por suporte",
+      "resultado_esperado": "Iniciativa do novo combate não deve ser rolada nem inventada quando KO pré-batalha já encerra aquele combate.",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-70",
+      "cenario": "KO por suporte do SEGUNDO depois da resolução do PRIMEIRO sem KO",
+      "resultado_esperado": "Conceder um ponto ao SEGUNDO, descartar apenas os suportes que efetivamente se resolveram e encerrar o combate sem iniciativa.",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-71",
+      "cenario": "KO por suporte no terceiro ponto",
+      "resultado_esperado": "Partida encerrada ao chegar a 3; sem novo ciclo, sem reposição/sorteio.",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-72",
+      "cenario": "KO por suporte antes de terceiro ponto",
+      "resultado_esperado": "Inicia próximo ciclo de preparação na prioridade fixa, saques de ambos até 5 apenas na abertura antes da troca, preserva PV sobrevivente.",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-73",
+      "cenario": "Suporte declarado mas não homologado não provoca KO",
+      "resultado_esperado": "Sem resolução, descarte, ponto ou mudança de zona; devolver PENDENTE ao árbitro.",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-74",
+      "cenario": "Resolução duplicada do evento de KO por suporte",
+      "resultado_esperado": "Mesmo evento idempotente: não duplicar ponto, descarte, PV nem abertura de ciclo.",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-75",
+      "cenario": "Morte simultânea provocada pelo mesmo efeito",
+      "resultado_esperado": "Suspender pontuação (PENDENTE): não decidir vencedor do duelo sem deliberação administrativa.",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-76",
+      "cenario": "Candidato de dano Giant Owl ou Pegasus ainda requer homologação",
+      "resultado_esperado": "Fonte de ataques verificada; flag candidato até aprovação individual; não executar por efeito automático da POC-20.",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-77",
+      "cenario": "Troca de Tentacle por Bite em Roper depende de aprovação",
+      "resultado_esperado": "Habilidade candidata original Tentacle fica intacta; Bite comprovado +7 / 3d8+4 apenas alternativa; nenhuma alteração no deck sem autorização.",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-78",
+      "cenario": "Suporte Light Eater Tentacle com fonte de terceiros",
+      "resultado_esperado": "Exigir homologação individual da mecânica +4, 1d6+2 contundente e aceitação da fonte 5E de terceiros; não classificar como SRD 5.2.1.",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-79",
+      "cenario": "Suporte Ahu-Nixta Drudge Fear externo",
+      "resultado_esperado": "Exigir análise da magia Fear, sua edição, alvo, duração e recursos antes da iniciativa. Não usar Whirring Blades como substituição espontânea.",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-80",
+      "cenario": "Suporte Maw Swarm Bites no sistema A5E",
+      "resultado_esperado": "Exigir regra de compatibilização A5E e significado de bloodied na carta de suporte antes da iniciativa; sem assumir PV da criatura ativa como gatilho.",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-81",
+      "cenario": "Presença de 40 arquivos individuais de fichas em cada deck",
+      "resultado_esperado": "PASSA em auditoria de presença: 40/40 por deck, sem lacunas de posição; não alegar homologação integral",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-82",
+      "cenario": "Continuar preparação/visualização com fichas em pesquisa",
+      "resultado_esperado": "Não bloquear interface, ordens, mão, campo e histórico por status NÃO HOMOLOGADA",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-83",
+      "cenario": "Ficha individual realmente ausente quando exigida em ação",
+      "resultado_esperado": "Buscar fontes disponíveis; sem dados suficientes, somente a ação afetada fica PENDENTE, sem mudança de estado",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    },
+    {
+      "id": "CT-84",
+      "cenario": "Suporte selecionado com texto não validado para efeito concreto",
+      "resultado_esperado": "Não inventar números; suspender só o efeito e oferecer Sem suporte quando a fase permitir",
+      "resultado": "NAO_EXECUTADO",
+      "evidencia": null
+    }
+  ]
+}

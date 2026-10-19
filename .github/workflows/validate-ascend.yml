@@ -1,0 +1,20 @@
+name: Validar estrutura do Ascend
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validar estrutura e adaptador com fixtures sintéticos
+        run: python -m unittest discover -s tests/quality -v
+      - name: Compilar módulos experimentais (sem executá-los)
+        run: python -m compileall -q experimental/legacy/src

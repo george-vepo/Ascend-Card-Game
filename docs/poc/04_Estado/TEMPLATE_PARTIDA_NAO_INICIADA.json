@@ -1,0 +1,54 @@
+{
+  "_aviso": "TEMPLATE NÃO OFICIAL: zero cópias de ambos os jogadores, não pode ser usado como partida iniciada. Substituir SOMENTE após validar decks 40/40 e resolver pendências.",
+  "partida_id": null,
+  "versao": null,
+  "situacao": "NAO_INICIADA",
+  "fase": "VALIDACAO_DECKS",
+  "ator_da_vez": null,
+  "placar": {
+    "J1": 0,
+    "J2": 0
+  },
+  "combate": {
+    "numero": 0,
+    "rodada": 0,
+    "iniciativas": {},
+    "pendencias": []
+  },
+  "jogadores": {
+    "J1": {
+      "controlador": "HUMANO",
+      "copia_ids_deck": [],
+      "cartas": [],
+      "monte_ordem_ids": [],
+      "suporte_reservado_id": null,
+      "criatura_ativa_id": null
+    },
+    "J2": {
+      "controlador": "IA",
+      "copia_ids_deck": [],
+      "cartas": [],
+      "monte_ordem_ids": [],
+      "suporte_reservado_id": null,
+      "criatura_ativa_id": null
+    }
+  },
+  "evento_ultimo_id": null,
+  "historico_eventos": [],
+  "avisos": [
+    "Não embaralhar/comprar/atacar com este template; ele intencionalmente não valida pelo schema de estado oficial.",
+    "POC v1.5: PRIMEIRO/SEGUNDO só serão preenchidos pelo sorteio inicial após autorização; persistem nos ciclos; iniciativa independente em cada novo combate.",
+    "POC-19: não comprar no KO nem em rodada interna; quando houver próximo ciclo, comprar uma vez por jogador até 5 antes da troca. Nenhum ciclo foi aberto neste template."
+  ],
+  "prioridade_preparacao": {
+    "primeiro": null,
+    "segundo": null,
+    "sorteio_realizado": false,
+    "sorteio_evento_id": null,
+    "ordem_fixa_ate_fim_do_duelo": true
+  },
+  "controle_saque_ciclo": {
+    "ciclo_atual": 0,
+    "processados": []
+  }
+}

@@ -1,0 +1,392 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "srd-poc-estado-v1_5",
+  "title": "Estado oficial SRD Card Game POC v1.5 (contrato)",
+  "description": "Esquema para validação estrutural; invariantes de 40 cópias e progressão exigem validação adicional. Não é estado já iniciado. Prioridade PRIMEIRO/SEGUNDO é sorteada uma vez por duelo, nunca a cada novo ciclo; validar papéis diferentes e resultado persistente no árbitro. Regra POC-19: reposição até cinco somente na abertura de novo ciclo após KO (não no mesmo evento), para ambos; ciclo inicial usa mão de setup sem duplicar.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "partida_id",
+    "versao",
+    "situacao",
+    "fase",
+    "placar",
+    "prioridade_preparacao",
+    "combate",
+    "jogadores",
+    "evento_ultimo_id"
+  ],
+  "properties": {
+    "partida_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "versao": {
+      "type": "string",
+      "pattern": "^E[0-9]{3,}$"
+    },
+    "situacao": {
+      "enum": [
+        "PREPARACAO",
+        "EM_ANDAMENTO",
+        "PENDENTE",
+        "ENCERRADA"
+      ]
+    },
+    "fase": {
+      "enum": [
+        "VALIDACAO_DECKS",
+        "TROCA",
+        "INVOCACAO_EVOLUCAO",
+        "SELECAO_SUPORTE",
+        "INICIATIVA",
+        "COMBATE",
+        "POS_COMBATE",
+        "ENCERRADA"
+      ]
+    },
+    "ator_da_vez": {
+      "enum": [
+        "J1",
+        "J2",
+        null
+      ]
+    },
+    "placar": {
+      "type": "object",
+      "required": [
+        "J1",
+        "J2"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "J1": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3
+        },
+        "J2": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3
+        }
+      }
+    },
+    "combate": {
+      "type": "object",
+      "required": [
+        "numero",
+        "rodada",
+        "iniciativas"
+      ],
+      "properties": {
+        "numero": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rodada": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "iniciativas": {
+          "type": "object"
+        },
+        "pendencias": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "jogadores": {
+      "type": "object",
+      "required": [
+        "J1",
+        "J2"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "J1": {
+          "$ref": "#/$defs/jogador"
+        },
+        "J2": {
+          "$ref": "#/$defs/jogador"
+        }
+      }
+    },
+    "evento_ultimo_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "acoes_pendentes": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "historico_eventos": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/evento"
+      }
+    },
+    "avisos": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "prioridade_preparacao": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "primeiro",
+        "segundo",
+        "sorteio_realizado",
+        "sorteio_evento_id",
+        "ordem_fixa_ate_fim_do_duelo"
+      ],
+      "properties": {
+        "primeiro": {
+          "enum": [
+            "J1",
+            "J2",
+            null
+          ]
+        },
+        "segundo": {
+          "enum": [
+            "J1",
+            "J2",
+            null
+          ]
+        },
+        "sorteio_realizado": {
+          "type": "boolean"
+        },
+        "sorteio_evento_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "ordem_fixa_ate_fim_do_duelo": {
+          "const": true
+        }
+      }
+    },
+    "controle_saque_ciclo": {
+      "type": "object",
+      "description": "Gatilho POC-19; cada par ciclo/jogador só pode processar uma compra na abertura do ciclo. Unicidade de pares validada também pelo árbitro.",
+      "required": [
+        "ciclo_atual",
+        "processados"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "ciclo_atual": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "processados": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "ciclo",
+              "jogador",
+              "quantidade_comprada"
+            ],
+            "properties": {
+              "ciclo": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "jogador": {
+                "enum": [
+                  "J1",
+                  "J2"
+                ]
+              },
+              "quantidade_comprada": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "carta": {
+      "type": "object",
+      "required": [
+        "copia_id",
+        "criatura_id",
+        "nome",
+        "zona",
+        "suporte_reservado"
+      ],
+      "properties": {
+        "copia_id": {
+          "type": "string"
+        },
+        "criatura_id": {
+          "type": "string"
+        },
+        "nome": {
+          "type": "string"
+        },
+        "zona": {
+          "enum": [
+            "MONTE",
+            "MAO",
+            "CAMPO",
+            "CEMITERIO"
+          ]
+        },
+        "suporte_reservado": {
+          "type": "boolean"
+        },
+        "pv_atual": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "pv_max": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "condicoes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "recursos": {
+          "type": "object"
+        },
+        "efeitos": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "jogador": {
+      "type": "object",
+      "required": [
+        "controlador",
+        "copia_ids_deck",
+        "cartas",
+        "monte_ordem_ids",
+        "suporte_reservado_id"
+      ],
+      "properties": {
+        "controlador": {
+          "enum": [
+            "HUMANO",
+            "IA"
+          ]
+        },
+        "copia_ids_deck": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "cartas": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/carta"
+          }
+        },
+        "monte_ordem_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "suporte_reservado_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "criatura_ativa_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "evento": {
+      "type": "object",
+      "required": [
+        "evento_id",
+        "estado_base",
+        "estado_novo",
+        "autor",
+        "acao",
+        "decisao"
+      ],
+      "properties": {
+        "evento_id": {
+          "type": "string"
+        },
+        "estado_base": {
+          "type": "string"
+        },
+        "estado_novo": {
+          "type": "string"
+        },
+        "autor": {
+          "enum": [
+            "J1",
+            "J2",
+            "ARBITRO"
+          ]
+        },
+        "acao": {
+          "type": "string"
+        },
+        "decisao": {
+          "enum": [
+            "ACEITA",
+            "REJEITADA",
+            "PENDENTE"
+          ]
+        },
+        "rolagens": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "alteracoes": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
