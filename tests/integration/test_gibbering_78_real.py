@@ -421,5 +421,44 @@ class TestGibbering78(unittest.TestCase):
         self.assertEqual(r["decisao"],"REJEITADA",r)
         self.assertEqual(self.s.motor.state,before)
 
+    def test_37_blinded_so_expira_ao_fim_proximo_turno_mouther(self):
+        self._preparar_turno_do_mouther()
+        spit=self.ok("J2","BLINDING_SPITTLE_V24_TESTE",{
+            "aceite_escopo":ESCOPO,
+            "alvo_na_area_fixture":True,
+            "dex_d20_simulado":1,
+            "dano_d6_simulados":[2,2],
+        })
+        self.assertEqual(spit["resultado"]["blinded_ate_fim_turno_mouther"],2)
+        owl=self.s.motor.get_card(self.s.motor.state,"J1","CE-001")
+        self.assertIn("Blinded",owl["condicoes"])
+        self.assertEqual(len(owl["efeitos"]),1)
+        self.assertEqual(owl["efeitos"][0]["expira_ao_fim_turno_fonte"],2)
+        self.ok("J1","INICIO_TURNO_V24_TESTE",{
+            "aceite_escopo":ESCOPO,"gibbering_aplicavel_fixture":False,
+        })
+        self.assertIn("Blinded",owl["condicoes"])
+        attack=self.ok("J1","ATAQUE_V24_TESTE",{
+            "aceite_escopo":ESCOPO,"ataque":"Talons",
+            "alvo_no_alcance_fixture":True,
+            "d20_simulados":[12,12],"dano_dados":[1],
+        })
+        self.assertEqual(attack["resultado"]["modo_rolagem"],"DESVANTAGEM")
+        self.assertIn("Blinded",owl["condicoes"])
+        self.ok("J2","INICIO_TURNO_V24_TESTE",{
+            "aceite_escopo":ESCOPO,"recarga_d6_simulado":1,
+        })
+        self.assertIn("Blinded",owl["condicoes"])
+        bite=self.ok("J2","ATAQUE_V24_TESTE",{
+            "aceite_escopo":ESCOPO,"ataque":"Bite",
+            "alvo_no_alcance_fixture":True,
+            "d20_simulados":[12,12],"dano_dados":[1,1],
+        })
+        self.assertEqual(bite["resultado"]["modo_rolagem"],"VANTAGEM")
+        self.assertEqual(bite["resultado"]["efeitos_expirados"],["Blinded"])
+        self.assertNotIn("Blinded",owl["condicoes"])
+        self.assertFalse(owl["efeitos"])
+        self.assertEqual(self.s.motor.state["placar"],{"J1":0,"J2":0})
+
 if __name__=="__main__":
     unittest.main()
