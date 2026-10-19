@@ -1,4 +1,4 @@
-"""Testa as três fichas externas sem copiar a fonte para o Ascend."""
+"""Testa quatro fichas externas sem copiar a fonte para o Ascend."""
 import os
 import sys
 import unittest
@@ -48,11 +48,14 @@ class TesteAcervoSRDReal(unittest.TestCase):
                 self.checkout, self.contrato, self.cartas, "AB-POC-002"
             )
 
-    def test_giant_owl_deck_com_pv_nao_e_ficha_homologada(self):
-        with self.assertRaises(FichaPendente):
-            consultar_ficha(
-                self.checkout, self.contrato, self.cartas, "CE-001"
-            )
+    def test_giant_owl_com_fonte_celestial_real(self):
+        f = consultar_ficha(
+            self.checkout, self.contrato, self.cartas, "CE-001"
+        )
+        self.assertEqual((f.nome, f.ca, f.pv_maximos), ("Giant Owl", 12, 19))
+        self.assertIn("Talons. Melee Attack Roll: +4", f.ficha_integral)
+        self.assertIn("Resistances Necrotic, Radiant", f.ficha_integral)
+        self.assertFalse(f.mecanicas_automaticamente_homologadas)
 
     def test_integridade_e_sem_sorteio(self):
         self.assertEqual(len(self.cartas), 80)

@@ -29,13 +29,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: george-vepo/Catalogo-SRD
-          ref: ba0f496895438ef683855a7d65df375503c313fd
+          ref: 03f84e8426f469ef6a0e471faea2093b7c0b69c9
           path: external/Catalogo-SRD
           persist-credentials: false
           sparse-checkout: |
             docs/catalogo/data/deck-celestial-40.json
             docs/catalogo/data/deck-aberracao-40.json
             operational/research/decks/aberracao-40-20261014/fichas_srd521_integral_3.json
+            operational/research/decks/celestial-40-20261015/fichas_srd521_giant_owl_1.json
           sparse-checkout-cone-mode: false
       - uses: actions/setup-python@v5
         with:

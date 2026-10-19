@@ -1,7 +1,7 @@
 """Consultas MECÂNICAS sob demanda do Catálogo SRD, somente leitura.
 
 Não inventa atributos, não homologa ações e não altera o estado de jogo.
-Apenas três fichas SRD 5.2.1 são fonte identificada no catálogo pinado.
+São fontes identificadas três fichas de Aberração e uma Celestial no catálogo pinado.
 O campo editorial_review das três ainda informa "AINDA_NAO_TESTADA_EM_ENGINE".
 """
 from __future__ import annotations
@@ -22,6 +22,11 @@ CAMINHO_FICHAS = (
     "fichas_srd521_integral_3.json"
 )
 SCHEMA_ESPERADO = "SRD_3_ABERRACOES_SR521_CC_BY_2026-10-14"
+CAMINHO_FICHA_CELESTIAL = (
+    "operational/research/decks/celestial-40-20261015/"
+    "fichas_srd521_giant_owl_1.json"
+)
+SCHEMA_CELESTIAL = "SRD_1_CELESTIAL_SRD521_CC_BY_2026-10-19"
 REVISAO_EDITORIAL = "FONTE_INTEGRAL_IDENTIFICADA; AINDA_NAO_TESTADA_EM_ENGINE"
 ORIGEM_SRD = "https://www.dndbeyond.com/srd"
 
@@ -110,7 +115,12 @@ def consultar_ficha(
     ):
         raise RevisaoCatalogoDivergente("Commit do catálogo diverge do manifesto")
 
-    path = (raiz / CAMINHO_FICHAS).resolve()
+    caminho_relativo, schema = (
+        (CAMINHO_FICHA_CELESTIAL, SCHEMA_CELESTIAL)
+        if ref.id_catalogo == "AT-023" and ref.id_copia == "CE-001"
+        else (CAMINHO_FICHAS, SCHEMA_ESPERADO)
+    )
+    path = (raiz / caminho_relativo).resolve()
     if not path.is_relative_to(raiz):
         raise FichaConflitante("Fonte fora do catálogo")
     try:
@@ -121,7 +131,7 @@ def consultar_ficha(
         payload = json.loads(raw.decode("utf-8"))
     except (UnicodeError, ValueError) as exc:
         raise FichaConflitante("Documento de fichas inválido") from exc
-    if not isinstance(payload, dict) or payload.get("schema") != SCHEMA_ESPERADO:
+    if not isinstance(payload, dict) or payload.get("schema") != schema:
         raise FichaConflitante("Schema da fonte de fichas não reconhecido")
     if payload.get("source") != ORIGEM_SRD:
         raise FichaConflitante("Fonte do documento não corresponde ao SRD")

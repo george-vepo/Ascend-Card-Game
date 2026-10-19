@@ -25,9 +25,11 @@ DECK_ARQUIVOS = (
     "docs/catalogo/data/deck-celestial-40.json",
     "docs/catalogo/data/deck-aberracao-40.json",
 )
-FICHAS_ARQUIVO = (
+FICHAS_ARQUIVOS = (
     "operational/research/decks/aberracao-40-20261014/"
-    "fichas_srd521_integral_3.json"
+    "fichas_srd521_integral_3.json",
+    "operational/research/decks/celestial-40-20261015/"
+    "fichas_srd521_giant_owl_1.json",
 )
 
 
@@ -39,7 +41,7 @@ def conferir_checkout_sem_modificacoes(raiz: str | Path) -> None:
     try:
         p = subprocess.run(
             ["git", "-C", str(raiz), "status", "--porcelain", "--",
-             *DECK_ARQUIVOS, FICHAS_ARQUIVO],
+             *DECK_ARQUIVOS, *FICHAS_ARQUIVOS],
             text=True, capture_output=True, check=True, timeout=8,
         )
     except (OSError, subprocess.SubprocessError) as exc:
