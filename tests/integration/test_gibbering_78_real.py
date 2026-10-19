@@ -1,0 +1,260 @@
+"""Gibbering d8 7–8: resultado forçado, dados simulados e fonte real pinada.
+
+Nenhuma partida oficial, mão secreta ou checkpoint é publicado.
+"""
+import copy
+import os
+import sys
+import unittest
+from pathlib import Path
+
+ROOT=Path(__file__).resolve().parents[2]
+for name in ("src","experimental/legacy/src","experimental/integration"):
+    sys.path.insert(0,str(ROOT/name))
+
+from ascend.catalogo_poc import ler_contrato
+from motor_combate_fichas_srd import SessaoCombateFichasFixture, ESCOPO
+
+class TestGibbering78(unittest.TestCase):
+    def setUp(self):
+        self.s=SessaoCombateFichasFixture.criar_de_checkout(
+            os.environ["CATALOGO_SRD_DIR"], ler_contrato(ROOT),
+            primeiro="J2",
+            maos_fixadas={
+                "J1":["CE-001","CE-002","CE-003","CE-004","CE-005"],
+                "J2":["AB-POC-008","AB-POC-001","AB-POC-002",
+                      "AB-POC-003","AB-POC-004"],
+            },
+        )
+        self._seq=0
+        for j in ("J2","J1"):
+            self.ok(j,"TROCAR",{"descartar":[]})
+        self.ok("J2","INVOCAR",{"carta_id":"AB-POC-008"})
+        self.ok("J2","PRONTO_CRIATURA")
+        self.ok("J1","INVOCAR",{"carta_id":"CE-001"})
+        self.ok("J1","PRONTO_CRIATURA")
+        for j in ("J2","J1"):
+            self.ok(j,"ESCOLHER_SUPORTE",{"carta_id":None})
+        for _ in range(2):
+            self.ok("ARBITRO","RESOLVER_SUPORTE_FIXTURE",{"resultado":"PULAR"})
+        self.ok("ARBITRO","INICIATIVA_SRD_TESTE",{"d20":{"J1":17,"J2":8}})
+
+    def cmd(self, actor, action, params=None, ident=None):
+        self._seq += 1
+        return self.s.comando(
+            ident or f"gibbering78-{self._seq}",actor,action,params or {}
+        )
+
+    def ok(self, actor, action, params=None, ident=None):
+        r=self.cmd(actor,action,params,ident)
+        self.assertEqual(r["decisao"],"ACEITA",r)
+        return r
+
+    def start(self,d8=7,within=True,wis=1,extra=None):
+        params={
+            "aceite_escopo":ESCOPO,
+            "gibbering_aplicavel_fixture":True,
+            "wis_d20_simulado":wis,
+            "gibbering_d8_simulado":d8,
+        }
+        if within is not None:
+            params["mouther_ao_alcance_fixture"]=within
+        if extra:params.update(extra)
+        return self.cmd("J1","INICIO_TURNO_V24_TESTE",params)
+
+    def forced(self,rolls=None,damage=None,**kwargs):
+        p={
+            "aceite_escopo":ESCOPO,
+            "alvo_id":"AB-POC-008",
+            "ataque":"Talons",
+            "d20_simulados":[12] if rolls is None else rolls,
+            "dano_dados":[5] if damage is None else damage,
+        }
+        p.update(kwargs)
+        return self.cmd("J1","RESOLVER_ATAQUE_FORCADO_GIBBERING_TESTE",p)
+
+    def hp(self,who,cid):
+        return self.s.motor.get_card(
+            self.s.motor.state,who,cid
+        )["pv_atual"]
+
+    def test_01_d7_gera_ataque_obrigatorio_sem_dano_antecipado(self):
+        start=self.start()
+        self.assertEqual(start["decisao"],"ACEITA")
+        self.assertEqual(start["resultado"]["acao_exigida"],
+                         "RESOLVER_ATAQUE_FORCADO_GIBBERING_TESTE")
+        self.assertEqual(self.hp("J2","AB-POC-008"),52)
+        self.assertEqual(self.s.motor.state["ator_da_vez"],"J1")
+
+    def test_02_d8_tambem_aceito(self):
+        r=self.start(d8=8)
+        self.assertEqual(r["decisao"],"ACEITA")
+        self.assertEqual(r["resultado"]["gibbering_resultado_d8"],8)
+
+    def test_03_alcance_desconhecido_deixa_estado_intacto(self):
+        old=copy.deepcopy(self.s.motor.state)
+        r=self.start(within=None)
+        self.assertEqual(r["decisao"],"PENDENTE")
+        self.assertEqual(self.s.motor.state,old)
+
+    def test_04_sem_alvo_turno_passa_sem_rolar_ataque(self):
+        start=self.start(within=False)
+        self.assertEqual(start["decisao"],"ACEITA")
+        self.assertEqual(start["resultado"]["acao_exigida"],"PASSAR_TURNO_V24_TESTE")
+        finish=self.ok("J1","PASSAR_TURNO_V24_TESTE")
+        self.assertEqual(finish["resultado"]["passou_por"],
+                         "Gibbering 7–8 sem alvo ao alcance")
+        self.assertEqual(self.s.motor.state["ator_da_vez"],"J2")
+        self.assertEqual(self.hp("J2","AB-POC-008"),52)
+
+    def test_05_forca_talons_e_avanca_turno(self):
+        self.ok("J1","INICIO_TURNO_V24_TESTE",{
+            "aceite_escopo":ESCOPO,"gibbering_aplicavel_fixture":True,
+            "wis_d20_simulado":1,"gibbering_d8_simulado":7,
+            "mouther_ao_alcance_fixture":True
+        })
+        result=self.forced()
+        self.assertEqual(result["decisao"],"ACEITA",result)
+        self.assertEqual(result["resultado"]["dano_aplicado"],7)
+        self.assertEqual(result["resultado"]["seleção_alvo"],"UNICO_ELEGIVEL")
+        self.assertFalse(result["resultado"]["ko"])
+        self.assertEqual(self.hp("J2","AB-POC-008"),45)
+        self.assertEqual(self.s.motor.state["ator_da_vez"],"J2")
+
+    def test_06_d20_1_erra_mesmo_com_bonus(self):
+        self.start()
+        r=self.forced(rolls=[1],damage=[])
+        self.assertEqual(r["decisao"],"ACEITA",r)
+        self.assertFalse(r["resultado"]["acertou"])
+        self.assertEqual(self.hp("J2","AB-POC-008"),52)
+
+    def test_07_d20_20_dobra_dado_mas_nao_bonus(self):
+        self.start()
+        r=self.forced(rolls=[20],damage=[10,8])
+        self.assertEqual(r["decisao"],"ACEITA",r)
+        self.assertTrue(r["resultado"]["critico"])
+        self.assertEqual(r["resultado"]["dano_aplicado"],20)
+        self.assertEqual(self.hp("J2","AB-POC-008"),32)
+
+    def test_08_ataque_voluntario_bloqueado_durante_forcado(self):
+        self.start()
+        old=copy.deepcopy(self.s.motor.state)
+        r=self.cmd("J1","ATAQUE_V24_TESTE",{
+            "aceite_escopo":ESCOPO,"ataque":"Talons",
+            "alvo_no_alcance_fixture":True,
+            "d20_simulados":[10],"dano_dados":[4],
+        })
+        self.assertEqual(r["decisao"],"REJEITADA")
+        self.assertEqual(self.s.motor.state,old)
+
+    def test_09_nao_pode_pular_alvo_elegivel(self):
+        self.start()
+        r=self.cmd("J1","PASSAR_TURNO_V24_TESTE")
+        self.assertEqual(r["decisao"],"REJEITADA")
+        self.assertEqual(self.s.motor.state["ator_da_vez"],"J1")
+
+    def test_10_ataque_forcado_sem_gatilho_rejeitado(self):
+        r=self.forced()
+        self.assertEqual(r["decisao"],"REJEITADA")
+        self.assertEqual(self.hp("J2","AB-POC-008"),52)
+
+    def test_11_nao_escolher_alvo_arbitrario(self):
+        self.start()
+        r=self.forced(alvo_id="CE-001")
+        self.assertEqual(r["decisao"],"REJEITADA")
+
+    def test_12_nao_escolher_ataque_que_nao_existe(self):
+        self.start()
+        r=self.forced(ataque="Bite")
+        self.assertEqual(r["decisao"],"REJEITADA")
+
+    def test_13_dado_dano_invalido_preserva_estado(self):
+        self.start()
+        before=copy.deepcopy(self.s.motor.state)
+        r=self.forced(rolls=[12],damage=[11])
+        self.assertEqual(r["decisao"],"REJEITADA")
+        self.assertEqual(self.s.motor.state,before)
+
+    def test_14_dado_d20_faltando_preserva_estado(self):
+        self.start()
+        before=copy.deepcopy(self.s.motor.state)
+        r=self.forced(rolls=[],damage=[2])
+        self.assertEqual(r["decisao"],"REJEITADA")
+        self.assertEqual(self.s.motor.state,before)
+
+    def test_15_d8_sem_falha_em_sab_rejeita(self):
+        before=copy.deepcopy(self.s.motor.state)
+        r=self.start(d8=7,wis=14)
+        self.assertEqual(r["decisao"],"REJEITADA")
+        self.assertEqual(self.s.motor.state,before)
+
+    def test_16_checkpoint_preserva_ataque_forcado(self):
+        self.start()
+        cp=self.s.checkpoint()  # somente privado, memória; não exportar
+        rebuilt=SessaoCombateFichasFixture.restaurar(
+            cp,os.environ["CATALOGO_SRD_DIR"],ler_contrato(ROOT))
+        self.assertEqual(rebuilt.motor.state,self.s.motor.state)
+        self.assertEqual(rebuilt.motor.public(),self.s.motor.public())
+        reply=rebuilt.comando(
+            "replay-forced","J1","RESOLVER_ATAQUE_FORCADO_GIBBERING_TESTE",{
+                "aceite_escopo":ESCOPO,"alvo_id":"AB-POC-008",
+                "ataque":"Talons","d20_simulados":[11],"dano_dados":[3]
+            }
+        )
+        self.assertEqual(reply["decisao"],"ACEITA",reply)
+        self.assertEqual(rebuilt.motor.state["jogadores"]["J2"]["cartas"]["AB-POC-008"]["pv_atual"],47)
+
+    def test_17_somente_cenario_sintetico_sem_sorteio_ou_placar(self):
+        self.start()
+        r=self.forced()
+        self.assertEqual(r["resultado"]["origem_dados"],"DADOS_SIMULADOS_TESTE")
+        self.assertEqual(self.s.motor.state["placar"],{"J1":0,"J2":0})
+        self.assertTrue(self.s.motor.validate())
+        self.assertEqual(len(self.s.motor.state["jogadores"]["J1"]["cartas"]),40)
+        self.assertEqual(len(self.s.motor.state["jogadores"]["J2"]["cartas"]),40)
+
+    def test_18_publico_mostra_pendencia_sem_revelar_maos(self):
+        self.start()
+        public=self.s.mesa_publica()
+        import json
+        encoded=json.dumps(public,ensure_ascii=False)
+        self.assertNotIn("CE-002",encoded)
+        self.assertNotIn("AB-POC-001",encoded)
+        self.assertIn("ATAQUE_TALONS_PENDENTE",encoded)
+
+    def test_19_nao_forcar_turno_uma_segunda_vez(self):
+        self.start()
+        r=self.start(d8=8)
+        self.assertEqual(r["decisao"],"REJEITADA")
+
+    def test_20_apos_forcado_acao_extra_invalida(self):
+        self.start()
+        self.forced()
+        r=self.forced()
+        self.assertEqual(r["decisao"],"REJEITADA")
+
+    def test_21_blinded_provoca_desvantagem(self):
+        # O cegamento vem de Spittle, lançado após um turno normal da coruja.
+        self.ok("J1","INICIO_TURNO_V24_TESTE",{
+            "aceite_escopo":ESCOPO,"gibbering_aplicavel_fixture":False
+        })
+        self.ok("J1","ATAQUE_V24_TESTE",{
+            "aceite_escopo":ESCOPO,"ataque":"Talons",
+            "alvo_no_alcance_fixture":True,
+            "d20_simulados":[12],"dano_dados":[3],
+        })
+        self.ok("J2","INICIO_TURNO_V24_TESTE",{"aceite_escopo":ESCOPO})
+        self.ok("J2","BLINDING_SPITTLE_V24_TESTE",{
+            "aceite_escopo":ESCOPO,"alvo_na_area_fixture":True,
+            "dex_d20_simulado":1,"dano_d6_simulados":[6,2],
+        })
+        self.start(d8=7)
+        r=self.forced(rolls=[15,10],damage=[2])
+        self.assertEqual(r["decisao"],"ACEITA",r)
+        self.assertEqual(r["resultado"]["modo_rolagem"],"DESVANTAGEM")
+        self.assertEqual(r["resultado"]["d20_aplicado"],10)
+        self.assertEqual(self.hp("J2","AB-POC-008"),43)
+        self.assertEqual(self.hp("J1","CE-001"),15)
+
+if __name__=="__main__":
+    unittest.main()
