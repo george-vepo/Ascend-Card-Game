@@ -32,6 +32,23 @@
 - O mecanismo ainda está limitado a comandos já presentes na fixture Roper × Giant Owl, não arbitra automaticamente o catálogo com mais de 1.000 fichas.
 - A proteção da autenticação da declaração e a prova criptográfica de origem das rolagens devem ser produzidas pelo backend, antes de chamar a ponte. A etiqueta `SIMULADO_EXTERNO_TESTE` em CI não é um sorteador oficial.
 
+## Incremento 2 — fila SQLite durável com lease e fencing (PR posterior ao #36)
+
+A fila persiste **somente metadados públicos e referência opaca** ao checkpoint privado (não guarda cartas, mão, ordem de montes ou estado de combate). `src/ascend/fila_simulacao_background.py` implementa:
+
+- `FilaBackground(path).enfileirar(job_id, referencia_opaca)`: cria job `NA_FILA`, bloqueia IDs duplicados e não recebe dados privados.
+- `reivindicar(worker_id)`: reserva job por lease com `token` secreto e número de fencing monotônico, usando transação SQLite `BEGIN IMMEDIATE`; bloqueia execução concorrente dupla.
+- `renovar(claim)`: renova lease válido sem perdê-lo; claims antigos não conseguem confirmar depois de expirados/substituídos.
+- `confirmar(claim, status, resumo_publico)`: grava somente campos sanitizados `passos_aceitos`, `fase`, `ator_da_vez`, `versao_estado`, `placar_fixture`; rejeita quaisquer campos de mãos/decks/histórico.
+- `retomar(job_id, entrada_externa_validada=True)`: apenas quando serviço de autenticação/rolagens indicar nova entrada válida; não presume entradas.
+- `cancelar(job_id)`: invalida lease de worker ativo sem alterar por conta própria o estado do motor.
+- `executar_tick_worker(fila, worker_id, executor)`: retira **um job** e invoca callback de execução injetado, que carrega a fixture a partir do armazenamento privado e resolve passos sob o contrato anterior; devolve `NA_FILA`, `AGUARDANDO_JOGADOR`, `AGUARDANDO_DADOS`, `PENDENTE_REGRA`, `CONCLUIDO` ou `FALHOU`. Exceções não vazam mensagem nem criam placar falso.
+- `status_publico(job_id)`: somente progresso e resumo sem token, IDs privados ou snapshot de cartas.
+
+**Caveat essencial:** o banco de metadados e o tick são duráveis e podem ser utilizados por **um processo separado**, mas ainda não existe adaptador do modelo/sorteador, armazenamento cifrado/restrito dos checkpoints e **serviço daemon efetivamente iniciado**. O sistema não está simulando continuamente uma batalha real enquanto o chat está fechado. A fila isolada não consegue reconstruir o combate do nada; dependerá do backend de execução.
+
+**Validação:** `tests/integration/test_fila_simulacao_background.py`, incluindo reclamação única concorrente, invalidação de worker antigo, heartbeat, retomada apenas após confirmação confiável, cancelamento, privacidade e persistência após reabrir SQLite.
+
 ## Próximas entregas para atender o modo background integral
 
 1. Criar **fila durável de jobs**, storage privado de checkpoint com identidade da partida, **worker independente da sessão/UI**, retomada após reinício e API de polling/streaming público; abortar/cancelar com segurança e limites de custo/tempo.
