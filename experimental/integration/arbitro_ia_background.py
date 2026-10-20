@@ -105,6 +105,8 @@ class JobSimulacao:
             raise ValueError("job_id ou limite de passos inválidos")
         if not isinstance(self.sessao, SessaoRoperFixture):
             raise ValueError("somente fixture Roper/Owl nesta primeira entrega")
+        if self.sessao.motor.state["fase"] != "COMBATE":
+            raise ValueError("job só pode começar após entrada na fase de combate")
 
     def status_publico(self) -> dict:
         mesa = self.sessao.mesa_publica()
@@ -143,6 +145,16 @@ class JobSimulacao:
             if not isinstance(declaracao["evento_id"], str) or not declaracao["evento_id"]:
                 raise ValueError("ID do evento ausente")
             eid = declaracao["evento_id"]
+            # Primeiro verifica replay: a base já pode ter avançado depois
+            # da aplicação original; não exigir a versão/ator antigo novamente.
+            if rolagens is not None:
+                fp_replay = digest({
+                    "decl": declaracao, "proposta": proposta, "rolagens": rolagens
+                })
+                if eid in self._fingerprints:
+                    if self._fingerprints[eid] != fp_replay:
+                        raise ValueError("colisão de evento/idempotência")
+                    return copy.deepcopy(self._respostas[eid])
             if not isinstance(declaracao["opcoes"], dict):
                 raise ValueError("opções de declaração inválidas")
             if declaracao["ator"] != actor:
@@ -191,10 +203,6 @@ class JobSimulacao:
                 raise ValueError("rolagens com chaves fora da autorização")
             params = {**declaracao["opcoes"], **rolagens["dados"]}
             fp = digest({"decl": declaracao, "proposta": proposta, "rolagens": rolagens})
-            if eid in self._fingerprints:
-                if self._fingerprints[eid] != fp:
-                    raise ValueError("colisão de evento/idempotência")
-                return copy.deepcopy(self._respostas[eid])
             # Não aceitar um evento repetido que exista no motor, mas não no job.
             if eid in self.sessao.motor.responses:
                 raise ValueError("evento já registrado fora deste job")
@@ -216,7 +224,12 @@ class JobSimulacao:
                 else:
                     self.estado = "NA_FILA"  # próximo passo em outro tick do worker
             elif resultado["decisao"] == "PENDENTE":
-                self.estado = "PENDENTE_REGRA"
+                motivo = resultado.get("motivo", "").casefold()
+                self.estado = (
+                    "AGUARDANDO_DADOS" if any(
+                        word in motivo for word in ("d20", "rolag", "dados ")
+                    ) else "PENDENTE_REGRA"
+                )
             else:
                 self.estado = "FALHOU"
             public_result = self.status_publico()
