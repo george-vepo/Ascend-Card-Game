@@ -1,6 +1,6 @@
 # Ascend Card Game — checkpoint verificável de desenvolvimento
 
-**Atualizado:** 2026-10-19. **Base de código:** `main` após o PR #28; commit `213684db8a9faaa5c9514f2b8837aae377804693`.
+**Atualizado:** 2026-10-19. **Base de código:** `main` após o PR #31; commit `2a547c07ce5045831a5cb2ec9bdfed73f64ecb2c`.
 
 ## Fonte da verdade e arquitetura
 
@@ -25,8 +25,9 @@
 | [PR #23](https://github.com/george-vepo/Ascend-Card-Game/pull/23) | Multiattack atômico do Roper (2 Tentacle, Reel, 2 Bite) em casos com até um vínculo Grappled; duplo vínculo retorna PENDENTE sem mutação | `92cefa9357d3f48a8fb652bb2b1e1239842f248c` | [154 testes aprovados](https://github.com/george-vepo/Ascend-Card-Game/actions/runs/39352157314) na suíte Roper e [81 testes de regressão](https://github.com/george-vepo/Ascend-Card-Game/actions/runs/39352157313); cinco workflows verdes |
 | [PR #26](https://github.com/george-vepo/Ascend-Card-Game/pull/26) | **Homebrew aprovado:** múltiplos tentáculos por alvo, fuga única libera todos, destruição isolada conserva demais, Reel alvo único, KO limpa tudo e Multiattack completo na Action | `74422eb458457380477deb1e3036598b06934e26` | [170 testes aprovados](https://github.com/george-vepo/Ascend-Card-Game/actions/runs/39353711185) e [81 de regressão](https://github.com/george-vepo/Ascend-Card-Game/actions/runs/39353711192), cinco workflows verdes |
 | [PR #28](https://github.com/george-vepo/Ascend-Card-Game/pull/28) | Inventário SRD de Spider Climb/Flyby como traits exclusivamente espaciais (sem efeito na POC); Spellcasting da Owl (At Will Detect Evil and Good / Detect Magic; Clairvoyance 1/Day) auditada sem conjuração; limitações obsoletas do perfil corrigidas | `213684db8a9faaa5c9514f2b8837aae377804693` | [186 testes aprovados](https://github.com/george-vepo/Ascend-Card-Game/actions/runs/39354689642) e [81 regressões](https://github.com/george-vepo/Ascend-Card-Game/actions/runs/39354689537), cinco workflows verdes |
+| [PR #31](https://github.com/george-vepo/Ascend-Card-Game/pull/31) | **Decisão delegada #30:** Detect Evil and Good e Detect Magic como Actions de detecção só do campo público, concentração 100 rodadas e salvaguarda Constituição sob dano; Clairvoyance sem locais/10 minutos é inaplicável e não consome 1/Day | `2a547c07ce5045831a5cb2ec9bdfed73f64ecb2c` | [210 testes aprovados](https://github.com/george-vepo/Ascend-Card-Game/actions/runs/39356307864) e [81 regressões](https://github.com/george-vepo/Ascend-Card-Game/actions/runs/39356307710), cinco workflows verdes |
 
-**Contagens dos workflows:** os 81 testes da suíte de fuga/destruição são repetidos parcialmente no workflow principal. Não somar esses totais como testes independentes. Cinco workflows do PR #28 foram aprovados: Roper, fuga/destruição, estrutura, ponte e referências do Catálogo SRD.
+**Contagens dos workflows:** os 81 testes da suíte de fuga/destruição são repetidos parcialmente no workflow principal. Não somar esses totais como testes independentes. Cinco workflows do PR #31 foram aprovados: Roper, fuga/destruição, estrutura, ponte e referências do Catálogo SRD.
 
 ## Arquivos e módulos atuais relevantes
 
@@ -39,7 +40,10 @@
 - `tests/integration/test_roper_grapple_multiplo_real.py`: dezesseis cenários novos do PR #26.
 - `src/ascend/habilidades_poc_srd.py`: extrator estrito de Traits espaciais e lista de magias da Owl, apenas consulta.
 - `tests/integration/test_habilidades_poc_srd_real.py`: dezesseis cenários de auditoria pura e sem efeitos, adicionados no PR #28.
-- `docs/POC_AUDITORIA_TRAITS_MAGIAS_ROPER_OWL.md`: passivos sem efeito espacial e Spellcasting ainda não executável.
+- `docs/POC_AUDITORIA_TRAITS_MAGIAS_ROPER_OWL.md`: histórico da pré-auditoria do PR #28, **superado em parte** pelo PR #31.
+- `src/ascend/magias_owl_poc.py`: classificação de tipos públicos, efeitos mágicos públicos e salvaguarda de Constituição extraída da ficha SRD.
+- `tests/integration/test_owl_spellcasting_publico_real.py`: 24 testes novos de detecção, concentração, rollback, privacidade e checkpoint.
+- `docs/poc/00_Governanca/DECISAO_20261019_MAGIAS_GIANT_OWL_SEM_POSICAO.md`: decisão **homebrew** delegada #30 e regras da POC de detecção.
 - `docs/poc/00_Governanca/DECISAO_20261019_GRAPPLE_MULTIPLO_ROPER.md`: homebrew aprovado, distinto do SRD.
 - `docs/ROPER_MULTIATTACK_ATOMICO_PARCIAL.md`: limite de escopo, dados simulados, Action única e rollback.
 - `.github/workflows/validate-roper-basico.yml`: regressão de todos os componentes do Roper.
@@ -51,9 +55,9 @@
 
 **DECISÃO JÁ VIGENTE DESDE 15/10/2026, RATIFICADA EM 19/10/2026:** nenhum combate usa posição, arena, distância ou checagem de alcance espacial. Ver contrato `docs/poc/01_Regras/CONTRATO_DE_REGRAS.md` e [Issue #19 encerrada](https://github.com/george-vepo/Ascend-Card-Game/issues/19). A ausência de arena jamais bloqueia uma ação. O [PR #21](https://github.com/george-vepo/Ascend-Card-Game/pull/21) removeu as verificações espaciais e habilitou Reel individual como Action sem deslocamento, com cinco workflows verdes e merge confirmado na `main`.
 
-**RESOLVIDO:** [Issue #24](https://github.com/george-vepo/Ascend-Card-Game/issues/24) encerrada após aprovação expressa, testes e merge do PR #26. A regra de uma única fuga liberando todos os tentáculos do Roper é **homebrew do Card Game**, não texto literal do SRD. **CLASSIFICADOS SEM EFEITO ESPACIAL:** Spider Climb do Roper e Flyby da Owl são Traits auditadas, mas movimento e alcance não existem no Card Game. **AINDA FORA DO RECORTE:** efeitos e gerenciamento de recursos de Spellcasting da Owl e demais componentes SRD. O inventário de magias é consulta, não conjuração. Deslocamento posicional/vôo/arena **não será implementado**; verificar separadamente se uma habilidade tem efeitos não espaciais traduzíveis sem inventar regras.
+**RESOLVIDO:** [Issue #24](https://github.com/george-vepo/Ascend-Card-Game/issues/24) encerrada após aprovação expressa, testes e merge do PR #26. A regra de uma única fuga liberando todos os tentáculos do Roper é **homebrew do Card Game**, não texto literal do SRD. **CLASSIFICADOS SEM EFEITO ESPACIAL:** Spider Climb do Roper e Flyby da Owl são Traits auditadas, mas movimento e alcance não existem no Card Game. **ISSUE #30 RESOLVIDA:** [decision](https://github.com/george-vepo/Ascend-Card-Game/issues/30) e PR #31 integrados. Detect Evil and Good/Detect Magic executáveis como **Actions** da Owl, com leitura estrita de informações públicas do campo, concentração de no máximo 100 rodadas, salvaguarda de Constituição verificada, substituição/encerramento e rollback transacional no dano; **Clairvoyance inaplicável** com 1/Day preservado (não consumido). A substituição do domínio físico pelo campo público é **homebrew aprovada**, não texto do SRD. **AINDA FORA DO RECORTE:** inspeção de escola/aura com segunda Magic Action em efeitos concretos, magias de outras criaturas e demais componentes SRD. Deslocamento posicional/vôo/arena **não será implementado**; verificar separadamente se uma habilidade tem efeitos não espaciais traduzíveis sem inventar regras.
 
-**Próximo incremento seguro:** conferir texto integral no SRD 5.2.1 das magias `Detect Evil and Good`, `Detect Magic` e `Clairvoyance` da Giant Owl; separar resultados informativos implementáveis dos que exigem posição/distância e decidir com o administrador como tratar alvos/privacidade/recurso 1/Day antes de autorizar conjuração. Não transformar apenas o inventário de nomes em magia executável. O motor continua experimental, **não equivale a combate SRD integral**.
+**Próximo incremento seguro:** identificar próximo componente de combate ainda não integrado e verificável nas fichas de criaturas já presentes ou ampliar o conjunto de criaturas somente com proveniência do Catálogo SRD. Manter efeitos espaciais fora, respeitar privacidade e não inventar magias, recursos ou regras. As detecções da Owl **já estão implementadas** na fixture; a inspeção posterior de aura/escola exige efeito mágico público com escola comprovada. O motor continua experimental, **não equivale a combate SRD integral**.
 
 **Partida oficial:** não iniciada. **Placar oficial:** J1 0 × 0 J2. **Rolagens em CI:** simuladas, externas e explícitas. Não publicar mãos, decks privados, ordem de montes nem snapshots de estado competitivo real.
 
