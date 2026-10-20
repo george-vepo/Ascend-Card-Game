@@ -318,7 +318,7 @@ class ResultadoExternoWeb(unittest.TestCase):
             )
 
     def test_31_arquivo_json_invalido_rejeitado(self):
-        status, out = self.post(data=b"{"quebrado":")
+        status, out = self.post(data=b'{\u0022quebrado\u0022:')
         self.assertEqual(status, 400, out)
 
     def test_32_pontuacao_e_hash_evento_auditaveis(self):
