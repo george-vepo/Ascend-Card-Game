@@ -232,12 +232,15 @@ class RoperTentacleFixture(unittest.TestCase):
         self.tentacle()
         self.assertEqual(self.s.motor.state["placar"],{"J1":0,"J2":0})
 
-    def test_27_novo_tentaculo_mesmo_alvo_pendente(self):
+    def test_27_novo_tentaculo_mesmo_alvo_mantem_condicao_unica(self):
         self.tentacle();self.owl_attack([19,4],[])
-        old=copy.deepcopy(self.s.motor.state)
         r=self.tentacle(slot=2)
-        self.assertEqual(r["decisao"],"PENDENTE",r)
-        self.assertEqual(self.s.motor.state,old)
+        self.assertEqual(r["decisao"],"ACEITA",r)
+        owl=self.owl()
+        self.assertEqual(owl["condicoes"],["Grappled","Poisoned"])
+        self.assertEqual(len(owl["efeitos"]),2)
+        self.assertEqual(set(self.s.motor.state["combate"]["tentaculos_roper"]),{"1","2"})
+        self.assertEqual(r["resultado"]["condicoes_aplicadas"],[])
 
     def test_28_nao_permita_slot_ocupado(self):
         self.tentacle();self.owl_attack([19,4],[])
