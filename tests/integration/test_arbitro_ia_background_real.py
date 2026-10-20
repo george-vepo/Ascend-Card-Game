@@ -348,6 +348,30 @@ class BackgroundArbiterSafety(unittest.TestCase):
         self.assertEqual(self.job.status_publico()["partida"],
                          "FIXTURE_ISOLADA_NAO_OFICIAL")
 
+    def test_25_retry_do_ko_concluido_nao_duplica_placar(self):
+        self.job.processar_passo(*self.get_package(eid="antes-ko-ai"))
+        self.job.processar_passo(*self.get_package(
+            options={"aceite_escopo": ESCOPO_BASICO, "ataque": "Talons"},
+            eid="antes-ko-humano",
+        ))
+        last = self.get_package(
+            dice={"d20_simulado": 20, "dano_dados": [8] * 6},
+            eid="ko-duplicado",
+        )
+        accepted = self.job.processar_passo(*last)
+        self.assertEqual(accepted["estado"], "CONCLUIDO")
+        events = len(self.sessao.motor.events)
+        repeated = self.job.processar_passo(*last)
+        self.assertEqual(repeated, accepted)
+        self.assertEqual(len(self.sessao.motor.events), events)
+        self.assertEqual(self.sessao.motor.state["placar"], {"J1": 0, "J2": 1})
+        changed = copy.deepcopy(last)
+        changed[2]["dados"]["d20_simulado"] = 19
+        collision = self.job.processar_passo(*changed)
+        self.assertEqual(collision["estado"], "CONCLUIDO")
+        self.assertIn("colisão", collision["erro"])
+        self.assertEqual(self.sessao.motor.state["placar"], {"J1": 0, "J2": 1})
+
 
 if __name__ == "__main__":
     unittest.main()
