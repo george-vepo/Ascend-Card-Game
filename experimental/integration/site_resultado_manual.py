@@ -130,7 +130,11 @@ def criar_servidor(sessao: SessaoRoperFixture, *,
                     return self._send_json(
                         409, {"decisao": "REJEITADA", "motivo": "colisão de evento"})
                 if result["decisao"] != "ACEITA":
-                    status = 409 if "versao" in result.get("motivo", "").lower() else 422
+                    motivo = result.get("motivo", "").lower()
+                    stale = ("estado mudou" in motivo
+                             or "hash do estado" in motivo
+                             or "outro combate" in motivo)
+                    status = 409 if stale else 422
                     return self._send_json(status, result)
                 return self._send_json(200, {
                     "decisao": "ACEITA",
