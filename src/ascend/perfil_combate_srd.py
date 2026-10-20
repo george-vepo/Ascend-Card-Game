@@ -15,7 +15,7 @@ ATAQUES_HOMOLOGADOS_PARA_TESTE = {
     "AB-POC-017": "Bite",
 }
 LIMITACOES_POC = {
-    "CE-001": ["Flyby exclusivamente espacial (sem efeito na POC); Spellcasting identificada, mas efeitos e recursos de magias não integrados"],
+    "CE-001": ["Flyby exclusivamente espacial (sem efeito na POC); Detect Evil and Good/Detect Magic integrados apenas ao campo público com concentração; Clairvoyance indisponível sem sensor/local"],
     "AB-POC-008": ["Aberrant Ground, movimento e alvos múltiplos não integrados"],
     "AB-POC-017": ["Spider Climb exclusivamente espacial (sem efeito na POC); o perfil genérico só extrai Bite, e Tentacle/Reel/Multiattack são executados pelo motor Roper"],
 }
