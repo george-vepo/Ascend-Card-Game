@@ -19,6 +19,10 @@ from ascend.perfil_combate_srd import extrair_perfil_de_combate
 from ascend.tentaculo_roper_srd import (extrair_tentaculo_roper, extrair_multiattack_roper)
 from ascend.fuga_roper_srd import extrair_testes_fuga_owl
 from ascend.habilidades_poc_srd import extrair_habilidades_poc_srd
+from ascend.magias_owl_poc import (
+    DETECCOES_OWL, REGRA_APROVADA, DURACAO_CONCENTRACAO_RODADAS,
+    bonus_salvaguarda_constituicao_owl, detectar_publico,
+)
 from ascend.testes_d20_srd import (
     resolver_teste_atributo, TesteD20Invalido, TesteD20Pendente,
 )
@@ -27,6 +31,7 @@ from motor_fichas_poc import MotorFichasPOC, SessaoFichasFixture
 
 ESCOPO_BASICO = "ATAQUE_INDIVIDUAL_SEM_MULTIATAQUE_OU_PASSIVOS"
 ESCOPO_MULTIATTACK = "MULTIATTACK_ATOMICO_GRAPPLE_MULTIPLO_APROVADO"
+ESCOPO_CONJURACAO_OWL = "OWL_DETECCAO_PUBLICA_SEM_POSICAO_ISSUE30"
 DUELO_ROPER = {"J1": "CE-001", "J2": "AB-POC-017"}
 
 
@@ -120,6 +125,28 @@ class MotorRoperBasico(MotorFichasPOC):
         """Impede deixar Grappled/Poisoned e tentáculos órfãos entre combates."""
         result=super().validate(s)
         estado=self.state if s is None else s
+        conc = estado["combate"].get("concentracao_owl")
+        if conc is not None:
+            if estado["fase"] != "COMBATE":
+                raise InvalidAction("concentração não persiste fora do combate")
+            if (not isinstance(conc, dict)
+                    or set(conc) != {
+                        "magia", "caster_id", "rodada_inicio", "duracao_rodadas",
+                        "bonus_salvaguarda_con", "origem_ficha_sha256",
+                    }
+                    or conc["magia"] not in DETECCOES_OWL
+                    or conc["caster_id"] != "CE-001"
+                    or type(conc["rodada_inicio"]) is not int
+                    or conc["rodada_inicio"] < 1
+                    or conc["rodada_inicio"] > estado["combate"]["rodada"]
+                    or estado["combate"]["rodada"] - conc["rodada_inicio"]
+                       > DURACAO_CONCENTRACAO_RODADAS
+                    or conc["duracao_rodadas"] != DURACAO_CONCENTRACAO_RODADAS
+                    or type(conc["bonus_salvaguarda_con"]) is not int
+                    or conc["bonus_salvaguarda_con"] != 1
+                    or not isinstance(conc["origem_ficha_sha256"], str)
+                    or len(conc["origem_ficha_sha256"]) != 64):
+                raise InvalidAction("registro de concentração divergente")
         if estado["fase"] == "COMBATE":
             self._estado_agarrado(
                 estado, self.get_card(estado, "J1", "CE-001")
@@ -150,11 +177,15 @@ class MotorRoperBasico(MotorFichasPOC):
             self._libertar_todos_tentaculos(s)
         destruidos=sorted(int(k) for k in combat.get("tentaculos_destruidos",{}))
         combat.pop("tentaculos_destruidos",None)
+        conc_encerrada = combat.pop("concentracao_owl", None)
         MotorFichasPOC._ko(self,s,winner,source)
         return {
             "tentaculos_soltos":ativos,
             "tentaculos_destruidos_encerrados":destruidos,
             "condicoes_removidas":(["Grappled","Poisoned"] if ativos else []),
+            "concentracao_encerrada": (
+                conc_encerrada["magia"] if conc_encerrada else None
+            ),
         }
 
     def _proximo_turno(self, estado, actor):
@@ -172,7 +203,14 @@ class MotorRoperBasico(MotorFichasPOC):
         # do Roper, não imediatamente após ser destruído.
         if estado["ator_da_vez"]=="J2":
             regenerados=sorted(int(k) for k in combate.pop("tentaculos_destruidos",{}))
+        conc = combate.get("concentracao_owl")
+        expirou = None
+        if (conc and estado["ator_da_vez"] == "J1"
+                and combate["rodada"] - conc["rodada_inicio"]
+                    >= DURACAO_CONCENTRACAO_RODADAS):
+            expirou = combate.pop("concentracao_owl")["magia"]
         return {
+            "concentracao_expirada": expirou,
             "proximo_ator":estado["ator_da_vez"],
             "rodada":combate["rodada"],
             "tentaculos_regenerados":regenerados,
@@ -307,6 +345,63 @@ class MotorRoperBasico(MotorFichasPOC):
         result["estado"] = "AUDITADO_SEM_EXECUCAO"
         result["fonte_regra_poc"] = "SEM_POSICIONAMENTO_15_10_2026"
         return result
+
+    def prevalidar_conjuracao_owl(self) -> dict:
+        """Consulta sem mutação; nenhuma opção lê mão/monte ou usa recursos."""
+        s = self.state
+        res = {
+            "estado": "INAPLICAVEL", "executavel": False,
+            "consome_acao": False, "magias": [],
+            "concentracao_atual": None,
+            "regra_homebrew": REGRA_APROVADA,
+        }
+        if s["fase"] != "COMBATE":
+            return res
+        self._perfis(s)
+        info = self.prevalidar_habilidades_poc()["campos"]["J1"]["conjuracao"]
+        if [x["nome"] for x in info["magias"]] != [
+                "Detect Evil and Good", "Detect Magic", "Clairvoyance"]:
+            raise UnresolvedRule("lista de Spellcasting diferente da ficha")
+        res["magias"] = [
+            {"nome": x["nome"],
+             "estado": ("PRONTA_COM_ACTION" if x["nome"] in DETECCOES_OWL
+                        else "INAPLICAVEL_SEM_LOCAL_E_TEMPO_DE_CONJURACAO"),
+             "frequencia_srd": x["frequencia_srd"]}
+            for x in info["magias"]
+        ]
+        conc = s["combate"].get("concentracao_owl")
+        res["concentracao_atual"] = conc["magia"] if conc else None
+        res["estado"] = "AUDITADA"
+        res["executavel"] = s["ator_da_vez"] == "J1"
+        return res
+
+    def _resolver_concentracao_por_dano(self, estado, dano, d20):
+        """SRD: Constituição CD max(10, metade do dano), máximo 30.
+
+        Faltando d20 exigido: evento inteiro PENDENTE; apply é transacional.
+        """
+        conc = estado["combate"].get("concentracao_owl")
+        if not conc or dano <= 0:
+            return None
+        if not self._dado(d20, 20):
+            if d20 is None:
+                raise UnresolvedRule(
+                    "salvaguarda de Concentração da Owl exige d20 externo"
+                )
+            raise InvalidAction("d20 de Concentração inválido")
+        cd = min(30, max(10, dano // 2))
+        bonus = conc["bonus_salvaguarda_con"]
+        total = d20 + bonus
+        manteve = total >= cd
+        resultado = {
+            "magia": conc["magia"], "d20_simulado": d20,
+            "bonus_salvaguarda_con": bonus, "cd": cd,
+            "total": total, "manteve": manteve,
+            "dados_simulados": True,
+        }
+        if not manteve:
+            estado["combate"].pop("concentracao_owl")
+        return resultado
 
     def prevalidar_reel(self) -> dict:
         """Consulta pública e sem mutação da mecânica Reel.
@@ -464,6 +559,11 @@ class MotorRoperBasico(MotorFichasPOC):
                 aplicado = bruto
             antes = alvo["pv_atual"]
             alvo["pv_atual"] = max(0, antes - aplicado)
+            concentracao = None
+            if alvo["pv_atual"] > 0:
+                concentracao = self._resolver_concentracao_por_dano(
+                    s, aplicado, entry.get("d20_concentracao_simulado")
+                )
             historico.append({
                 "etapa": "Bite", "numero": i, "d20_simulado": d20,
                 "bonus": ataque["bonus"], "total": d20 + ataque["bonus"],
@@ -472,6 +572,7 @@ class MotorRoperBasico(MotorFichasPOC):
                 "modificador_dano": ataque["flat"] if acertou else 0,
                 "dano_bruto": bruto, "dano_aplicado": aplicado,
                 "pv_antes": antes, "pv_depois": alvo["pv_atual"],
+                "concentracao": concentracao,
             })
             if alvo["pv_atual"] == 0:
                 # KO, cemitérios, condições e pontuação: um único evento.
@@ -499,6 +600,62 @@ class MotorRoperBasico(MotorFichasPOC):
         return resultado
 
     def _transition(self, s, actor, command, params):
+        if command == "CONJURAR_MAGIA_OWL_TESTE":
+            if actor != "J1":
+                raise InvalidAction("Spellcasting pertence à Giant Owl do J1")
+            self._gate(s, "COMBATE", actor)
+            if params.get("aceite_escopo") != ESCOPO_CONJURACAO_OWL:
+                raise UnresolvedRule("confirmar escopo aprovado de detecção pública")
+            magia = params.get("magia")
+            if magia == "Clairvoyance":
+                raise InvalidAction(
+                    "Clairvoyance inaplicável: exige localização do sensor "
+                    "e 10 minutos de conjuração; uso 1/Day NÃO consumido"
+                )
+            if magia not in DETECCOES_OWL:
+                raise InvalidAction("magia não disponível no recorte da Owl")
+            self._perfis(s)
+            fonte = consultar_ficha(
+                self.checkout_catalogo, self.contrato, self.referencias,
+                "CE-001", exigir_revisao=self.exigir_revisao,
+            )
+            lista = extrair_habilidades_poc_srd(fonte)["conjuracao"]["magias"]
+            if magia not in [x["nome"] for x in lista]:
+                raise UnresolvedRule("magia divergente da ficha de Spellcasting")
+            bonus = bonus_salvaguarda_constituicao_owl(fonte)
+            anterior = s["combate"].get("concentracao_owl")
+            s["combate"]["concentracao_owl"] = {
+                "magia": magia, "caster_id": "CE-001",
+                "rodada_inicio": s["combate"]["rodada"],
+                "duracao_rodadas": DURACAO_CONCENTRACAO_RODADAS,
+                "bonus_salvaguarda_con": bonus,
+                "origem_ficha_sha256": fonte.sha256_documento,
+            }
+            resultado = {
+                "acao": "Spellcasting", "magia": magia,
+                "tipo_acao": "Action",
+                "concentracao_anterior_encerrada": (
+                    anterior["magia"] if anterior else None
+                ),
+                "concentracao_max_rodadas": DURACAO_CONCENTRACAO_RODADAS,
+                "dados_simulados": False,
+                "regra_homebrew": REGRA_APROVADA,
+                "informacao_publica": detectar_publico(s, magia),
+                "origem_ficha_sha256": fonte.sha256_documento,
+                "recursos_diarios_consumidos": 0,
+            }
+            resultado.update(self._proximo_turno(s, actor))
+            return resultado
+        if command == "ENCERRAR_CONCENTRACAO_OWL_TESTE":
+            if actor != "J1" or s["fase"] != "COMBATE":
+                raise InvalidAction("somente a Owl em combate pode encerrar concentração")
+            conc = s["combate"].pop("concentracao_owl", None)
+            if not conc:
+                raise InvalidAction("não há concentração da Owl para encerrar")
+            return {
+                "acao": "Encerrar Concentração", "magia": conc["magia"],
+                "consome_acao": False, "regra_homebrew": REGRA_APROVADA,
+            }
         if command == "INICIATIVA_ROPER_TESTE":
             if actor != "ARBITRO" or s["fase"] != "INICIATIVA":
                 raise InvalidAction("iniciativa fora da fase ou sem árbitro")
@@ -585,6 +742,11 @@ class MotorRoperBasico(MotorFichasPOC):
             victim = self.get_card(s, defender, target_id)
             before = victim["pv_atual"]
             victim["pv_atual"] = max(0, before - damage)
+            concentracao = None
+            if defender == "J1" and victim["pv_atual"] > 0:
+                concentracao = self._resolver_concentracao_por_dano(
+                    s, damage, params.get("d20_concentracao_simulado")
+                )
             result = {
                 "ator": actor, "carta_origem": own_id,
                 "alvo": defender, "carta_alvo": target_id,
@@ -599,6 +761,7 @@ class MotorRoperBasico(MotorFichasPOC):
                 "dano_bruto": base_damage, "dano_aplicado": damage,
                 "pv_antes": before, "pv_depois": victim["pv_atual"],
                 "origem_ficha_sha256": own["source_sha256"],
+                "concentracao": concentracao,
                 "dados_simulados": True, "mecanica_parcial": True,
             }
             if victim["pv_atual"] == 0:
@@ -833,6 +996,12 @@ class MotorRoperBasico(MotorFichasPOC):
             )
             out["tentaculos_destruidos"] = copy.deepcopy(
                 self.state["combate"].get("tentaculos_destruidos",{})
+            )
+            conc = self.state["combate"].get("concentracao_owl")
+            out["concentracao_publica_owl"] = (
+                {"magia": conc["magia"], "rodada_inicio": conc["rodada_inicio"],
+                 "limite_rodadas": conc["duracao_rodadas"]}
+                if conc else None
             )
         return out
 
