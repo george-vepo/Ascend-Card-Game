@@ -1,0 +1,40 @@
+name: Registro manual externo — site e integração SRD
+on:
+  pull_request:
+    paths:
+      - "experimental/integration/resultado_combate_externo.py"
+      - "experimental/integration/site_resultado_manual.py"
+      - "experimental/integration/motor_roper_basico.py"
+      - "web/resultado-combate/**"
+      - "tests/integration/test_registro_resultado_externo_web_real.py"
+      - ".github/workflows/validate-resultado-combate-web.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  resultado-externo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: george-vepo/Catalogo-SRD
+          ref: 03f84e8426f469ef6a0e471faea2093b7c0b69c9
+          path: external/Catalogo-SRD
+          persist-credentials: false
+          sparse-checkout: |
+            docs/catalogo/data/deck-celestial-40.json
+            docs/catalogo/data/deck-aberracao-40.json
+            operational/research/decks/aberracao-40-20261014/fichas_srd521_integral_3.json
+            operational/research/decks/celestial-40-20261015/fichas_srd521_giant_owl_1.json
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Verificar registro manual e submissões HTTP
+        env:
+          CATALOGO_SRD_DIR: external/Catalogo-SRD
+        run: |
+          python -m unittest discover -s tests/integration -p test_registro_resultado_externo_web_real.py -v
