@@ -1,7 +1,7 @@
-"""Multiattack Roper: execução atômica do subconjunto SRD verificável.
+"""Multiattack Roper: execução atômica com Grappled múltiplo aprovado.
 
-Não homologa múltiplos tentáculos acertando/alvo já agarrado em paralelo.
 Fixture sem partida oficial, sem posição e com dados explicitamente simulados.
+Fuga única para todos os vínculos é homebrew aprovado no Card Game.
 """
 import copy
 import json
@@ -106,15 +106,18 @@ class MultiattackAtomicoSeguro(unittest.TestCase):
         self.assertEqual(list(self.s.motor.state["combate"]["tentaculos_roper"]), ["2"])
         self.assertEqual(self.card("J1", "CE-001")["efeitos"][0]["tentaculo"], 2)
 
-    def test_04_dois_tentacle_acertam_pendente_e_sem_mutacao(self):
-        old = copy.deepcopy(self.s.motor.state)
-        chain = self.s.motor.head_hash
-        r = self.cmd("J2", "MULTIATTACK_ROPER_TESTE",
-                     self.payload(t1=10, t2=10))
-        self.assertEqual(r["decisao"], "PENDENTE", r)
-        self.assertIn("dois vínculos Grappled", r["motivo"])
-        self.assertEqual(self.s.motor.state, old)
-        self.assertEqual(self.s.motor.head_hash, chain)
+    def test_04_dois_tentacle_acertam_mantem_vinculos_independentes(self):
+        r = self.ok("J2", "MULTIATTACK_ROPER_TESTE",
+                    self.payload(t1=10, t2=10))
+        self.assertEqual(list(self.s.motor.state["combate"]["tentaculos_roper"]),
+                         ["1", "2"])
+        self.assertEqual(self.card("J1", "CE-001")["condicoes"],
+                         ["Grappled", "Poisoned"])
+        self.assertEqual(len(self.card("J1", "CE-001")["efeitos"]), 2)
+        reel = r["resultado"]["componentes"][2]
+        self.assertEqual(reel["alvos_agarrados"], ["CE-001"])
+        self.assertEqual(reel["tentaculos_ativos"], [1, 2])
+        self.assertEqual(self.s.motor.state["ator_da_vez"], "J1")
 
     def test_05_dois_bites_acertam_e_restam_pv(self):
         r = self.ok("J2", "MULTIATTACK_ROPER_TESTE",
@@ -195,13 +198,13 @@ class MultiattackAtomicoSeguro(unittest.TestCase):
         r = self.cmd("J1", "MULTIATTACK_ROPER_TESTE", self.payload())
         self.assertEqual(r["decisao"], "REJEITADA")
 
-    def test_14_preflight_documenta_execucao_parcial_sem_homologar_completo(self):
+    def test_14_preflight_habilita_grapple_multiplo_aprovado(self):
         x = self.s.motor.prevalidar_multiattack()
-        self.assertFalse(x["executavel"])
-        self.assertTrue(x["executavel_parcial"])
-        self.assertEqual(x["escopo_execucao_parcial"], ESCOPO_MULTIATTACK)
-        self.assertIn("grapple_duplo_nao_integrado_para_todos_cenarios",
-                      x["bloqueios"])
+        self.assertTrue(x["executavel"])
+        self.assertFalse(x["consome_acao"])
+        self.assertEqual(x["escopo_execucao"], ESCOPO_MULTIATTACK)
+        self.assertEqual(x["estado"], "PRONTO_GRAPPLE_MULTIPLO_APROVADO")
+        self.assertEqual(x["bloqueios"], [])
 
     def test_15_idempotencia_nao_duplica_ataques_ou_eventos(self):
         payload = self.payload(b1=10, b2=10,
