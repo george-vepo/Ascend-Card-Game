@@ -18,6 +18,7 @@ from ascend.fichas_srd import consultar_ficha, FichaPendente, FichaConflitante
 from ascend.perfil_combate_srd import extrair_perfil_de_combate
 from ascend.tentaculo_roper_srd import (extrair_tentaculo_roper, extrair_multiattack_roper)
 from ascend.fuga_roper_srd import extrair_testes_fuga_owl
+from ascend.habilidades_poc_srd import extrair_habilidades_poc_srd
 from ascend.testes_d20_srd import (
     resolver_teste_atributo, TesteD20Invalido, TesteD20Pendente,
 )
@@ -273,6 +274,39 @@ class MotorRoperBasico(MotorFichasPOC):
     @staticmethod
     def _dado(valor, faces):
         return type(valor) is int and 1 <= valor <= faces
+
+    def prevalidar_habilidades_poc(self) -> dict:
+        """Inventário público dos dois campos, sem executar habilidades.
+
+        Passivas exclusivamente espaciais não causam efeitos no Card Game.
+        Magias da Owl permanecem pendentes de efeito/recurso, não se
+        consideram conjuradas por consultar sua descrição.
+        """
+        result = {
+            "estado": "INAPLICAVEL",
+            "consome_acao": False,
+            "altera_estado": False,
+            "campos": {},
+        }
+        s = self.state
+        if s.get("fase") != "COMBATE":
+            return result
+        self._perfis(s)
+        for jogador, id_copia in DUELO_ROPER.items():
+            try:
+                ficha = consultar_ficha(
+                    self.checkout_catalogo, self.contrato,
+                    self.referencias, id_copia,
+                    exigir_revisao=self.exigir_revisao,
+                )
+                result["campos"][jogador] = extrair_habilidades_poc_srd(ficha)
+            except (FichaPendente, FichaConflitante) as exc:
+                raise UnresolvedRule(
+                    "inventário de habilidades pendente: " + str(exc)
+                ) from exc
+        result["estado"] = "AUDITADO_SEM_EXECUCAO"
+        result["fonte_regra_poc"] = "SEM_POSICIONAMENTO_15_10_2026"
+        return result
 
     def prevalidar_reel(self) -> dict:
         """Consulta pública e sem mutação da mecânica Reel.
@@ -766,8 +800,17 @@ class MotorRoperBasico(MotorFichasPOC):
             return self._multiattack_roper_caso_seguro(s, params)
 
         if command == "SPIDER_CLIMB_ROPER_TESTE":
+            if actor != "J2":
+                raise InvalidAction("Spider Climb pertence ao Roper")
+            self._gate(s, "COMBATE", actor)
+            # É uma Trait passiva espacial da ficha, não uma Action.
+            # Não consumir um turno como se houvesse movimento.
+            inventario = self.prevalidar_habilidades_poc()
+            if inventario["campos"]["J2"]["passiva"]["nome"] != "Spider Climb":
+                raise UnresolvedRule("Spider Climb não conferida na ficha")
             raise UnresolvedRule(
-                "habilidade SRD documentada, ainda não implementada neste recorte"
+                "Spider Climb é Trait exclusivamente espacial, sem efeito "
+                "de movimento no Card Game; não existe Action a executar"
             )
         return MotorFichasPOC._transition(self, s, actor, command, params)
 
