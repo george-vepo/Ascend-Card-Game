@@ -16,6 +16,7 @@ on:
       - "tests/integration/test_roper_ko_grapple_cleanup_real.py"
       - "tests/integration/test_roper_multiattack_preflight_real.py"
       - "tests/integration/test_roper_multiattack_atomic_safe_real.py"
+      - "tests/integration/test_roper_grapple_multiplo_real.py"
       - ".github/workflows/validate-roper-basico.yml"
   workflow_dispatch:
 
@@ -55,3 +56,4 @@ jobs:
           python -m unittest discover -s tests/integration -p test_roper_ko_grapple_cleanup_real.py -v
           python -m unittest discover -s tests/integration -p test_roper_multiattack_preflight_real.py -v
           python -m unittest discover -s tests/integration -p test_roper_multiattack_atomic_safe_real.py -v
+          python -m unittest discover -s tests/integration -p test_roper_grapple_multiplo_real.py -v

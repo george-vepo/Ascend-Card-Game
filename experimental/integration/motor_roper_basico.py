@@ -1,8 +1,9 @@
 """Terceira criatura SRD: Bite e Tentacle isolados Roper × Giant Owl.
 
-NÃO é combate SRD completo: Multiattack suporta somente casos sem dois
-grapples simultâneos, Spider Climb, Flyby, recursos e magias seguem
-parciais. Reel e ataques ignoram movimento e alcance espacial na POC.
+NÃO é combate SRD completo: a fixture Roper suporta tentáculos múltiplos
+sobre o mesmo alvo conforme decisão homebrew aprovada no Card Game.
+Spider Climb, Flyby, recursos e magias permanecem parciais. Reel e
+ataques ignoram movimento e alcance espacial na POC.
 Somente cópias com ficha verificada no Catálogo SRD pinado.
 Dados são simulados e explícitos em fixtures, sem RNG; o jogo não usa posições ou alcance espacial.
 """
@@ -24,7 +25,7 @@ from motor_poc import MotorPOC, InvalidAction, UnresolvedRule, SIDES, other
 from motor_fichas_poc import MotorFichasPOC, SessaoFichasFixture
 
 ESCOPO_BASICO = "ATAQUE_INDIVIDUAL_SEM_MULTIATAQUE_OU_PASSIVOS"
-ESCOPO_MULTIATTACK = "MULTIATTACK_ATOMICO_CASOS_SEM_GRAPPLE_DUPLO"
+ESCOPO_MULTIATTACK = "MULTIATTACK_ATOMICO_GRAPPLE_MULTIPLO_APROVADO"
 DUELO_ROPER = {"J1": "CE-001", "J2": "AB-POC-017"}
 
 
@@ -32,40 +33,96 @@ class MotorRoperBasico(MotorFichasPOC):
     """Iniciativa e um ataque corpo a corpo por turno em fixture isolada."""
 
     def _estado_agarrado(self, estado, card):
-        """Aceita somente status originado por um Tentacle previamente validado."""
+        """Confere exatamente um vínculo por slot e condições sem acúmulo.
+
+        Regra homebrew aprovada 19/10/2026: vários tentáculos independentes
+        podem agarrar o alvo, mas Grappled e Poisoned aparecem uma única vez.
+        """
         condicoes = card["condicoes"]
         efeitos = card["efeitos"]
         slots = estado["combate"].get("tentaculos_roper", {})
-        if not condicoes and not efeitos:
-            if slots:
-                raise UnresolvedRule("grapple no combate sem condição correspondente")
+        if not isinstance(slots, dict):
+            raise UnresolvedRule("tentáculos ativos devem formar um mapa")
+        if not slots:
+            if condicoes or efeitos:
+                raise UnresolvedRule("condições de grapple sem tentáculo ativo")
             return
-        if (set(condicoes) != {"Grappled", "Poisoned"}
-                or len(condicoes) != 2 or len(efeitos) != 1
-                or len(slots) != 1):
-            raise UnresolvedRule("condições fora do recorte Tentacle não homologadas")
-        key, registro = next(iter(slots.items()))
-        efeito = efeitos[0]
-        if (type(key) is not str or not key.isdigit()
-                or not 1 <= int(key) <= 6
-                or not isinstance(registro, dict)
-                or registro.get("alvo_id") != "CE-001"
-                or registro.get("origem_id") != "AB-POC-017"
-                or efeito != {
-                    "tipo": "ROPER_TENTACLE_GRAPPLE",
-                    "fonte": "AB-POC-017",
-                    "alvo_id": "CE-001",
-                    "tentaculo": int(key),
-                    "condicoes": ["Grappled", "Poisoned"],
-                    "escape_dc": efeito.get("escape_dc"),
-                    "sha256_documento": registro.get("sha256_documento"),
-                }):
-            raise UnresolvedRule("vínculo entre tentáculo, efeito e alvo divergente")
+        if (condicoes != ["Grappled", "Poisoned"]
+                or len(efeitos) != len(slots) or not 1 <= len(slots) <= 6):
+            raise UnresolvedRule("condições/vínculos Grappled inconsistentes")
+        por_slot = {}
+        for efeito in efeitos:
+            if not isinstance(efeito, dict):
+                raise UnresolvedRule("efeito Tentacle inválido")
+            slot = efeito.get("tentaculo")
+            if type(slot) is not int or not 1 <= slot <= 6 or slot in por_slot:
+                raise UnresolvedRule("efeitos repetidos ou tentáculo inválido")
+            por_slot[slot] = efeito
+        if set(por_slot) != {int(key) for key in slots
+                            if type(key) is str and key.isdigit()
+                            and str(int(key)) == key}:
+            raise UnresolvedRule("efeitos e tentáculos não correspondem")
+        for key, registro in slots.items():
+            if (type(key) is not str or not key.isdigit()
+                    or str(int(key)) != key or not 1 <= int(key) <= 6
+                    or not isinstance(registro, dict)
+                    or registro.get("alvo_id") != "CE-001"
+                    or registro.get("origem_id") != "AB-POC-017"):
+                raise UnresolvedRule("slot Tentacle sem alvo e origem válidos")
+            esperado = {
+                "tipo": "ROPER_TENTACLE_GRAPPLE",
+                "fonte": "AB-POC-017", "alvo_id": "CE-001",
+                "tentaculo": int(key),
+                "condicoes": ["Grappled", "Poisoned"],
+                "escape_dc": por_slot[int(key)].get("escape_dc"),
+                "sha256_documento": registro.get("sha256_documento"),
+            }
+            if por_slot[int(key)] != esperado:
+                raise UnresolvedRule("vínculo entre tentáculo e efeito divergente")
+
+    def _agarrar_tentaculo(self, estado, slot, regra):
+        """Cria vínculo independente sem repetir a condição no alvo."""
+        alvo = self.get_card(estado, "J1", "CE-001")
+        self._estado_agarrado(estado, alvo)
+        slots = estado["combate"].setdefault("tentaculos_roper", {})
+        if str(slot) in slots:
+            raise InvalidAction("tentáculo já mantém alvo agarrado")
+        if len(slots) >= regra["quantidade_tentaculos"]:
+            raise InvalidAction("todos os tentáculos já estão ocupados")
+        if not slots:
+            alvo["condicoes"] = ["Grappled", "Poisoned"]
+        efeito = {
+            "tipo": "ROPER_TENTACLE_GRAPPLE",
+            "fonte": "AB-POC-017", "alvo_id": "CE-001",
+            "tentaculo": slot, "condicoes": ["Grappled", "Poisoned"],
+            "escape_dc": regra["escape_dc"],
+            "sha256_documento": regra["sha256_documento"],
+        }
+        alvo["efeitos"].append(efeito)
+        slots[str(slot)] = {
+            "origem_id": "AB-POC-017", "alvo_id": "CE-001",
+            "sha256_documento": regra["sha256_documento"],
+            "pv_atual": regra["tentaculo"]["pv"],
+            "pv_max": regra["tentaculo"]["pv"],
+        }
+        self._estado_agarrado(estado, alvo)
+
+    def _libertar_todos_tentaculos(self, estado):
+        """Libera todos os vínculos do mesmo Roper (escape aprovado ou KO)."""
+        ativos = sorted(int(x) for x in
+                        estado["combate"].get("tentaculos_roper", {}))
+        for slot in ativos:
+            self._libertar_tentaculo(estado, slot)
+        return ativos
 
     def validate(self, s=None):
         """Impede deixar Grappled/Poisoned e tentáculos órfãos entre combates."""
         result=super().validate(s)
         estado=self.state if s is None else s
+        if estado["fase"] == "COMBATE":
+            self._estado_agarrado(
+                estado, self.get_card(estado, "J1", "CE-001")
+            )
         if estado["fase"] in ("POS_COMBATE","ENCERRADA"):
             combat=estado["combate"]
             if combat.get("tentaculos_roper") or combat.get("tentaculos_destruidos"):
@@ -88,10 +145,8 @@ class MotorRoperBasico(MotorFichasPOC):
         self._perfis(s)  # Confere ficha/estado de tentáculos antes do encerramento.
         combat=s["combate"]
         ativos=sorted(int(k) for k in combat.get("tentaculos_roper",{}))
-        if len(ativos)>1:
-            raise UnresolvedRule("múltiplos tentáculos não implementados neste recorte")
         if ativos:
-            self._libertar_tentaculo(s,ativos[0])
+            self._libertar_todos_tentaculos(s)
         destruidos=sorted(int(k) for k in combat.get("tentaculos_destruidos",{}))
         combat.pop("tentaculos_destruidos",None)
         MotorFichasPOC._ko(self,s,winner,source)
@@ -169,11 +224,16 @@ class MotorRoperBasico(MotorFichasPOC):
         regra=perfis["J2"][1]["tentaculo"]
         ref = regra["sha256_documento"]
         for key,entry in slots.items():
-            if (not isinstance(entry,dict) or entry.get("sha256_documento")!=ref
+            if (type(key) is not str or not key.isdigit()
+                    or str(int(key))!=key
+                    or not 1<=int(key)<=regra["quantidade_tentaculos"]
+                    or not isinstance(entry,dict) or entry.get("sha256_documento")!=ref
                     or type(entry.get("pv_atual")) is not int
                     or not 1<=entry["pv_atual"]<=regra["tentaculo"]["pv"]
-                    or entry.get("pv_max")!=regra["tentaculo"]["pv"]):
-                raise UnresolvedRule("tentáculo ocupado sem PV/fonte verificáveis")
+                    or entry.get("pv_max")!=regra["tentaculo"]["pv"]
+                    or entry.get("origem_id")!="AB-POC-017"
+                    or entry.get("alvo_id")!="CE-001"):
+                raise UnresolvedRule("tentáculo ocupado sem slot/PV/fonte válidos")
         destruidos=estado["combate"].get("tentaculos_destruidos",{})
         if not isinstance(destruidos,dict):
             raise UnresolvedRule("registro de destruição deve ser um mapa")
@@ -186,27 +246,29 @@ class MotorRoperBasico(MotorFichasPOC):
                     or entry["sha256_documento"]!=ref):
                 raise UnresolvedRule("registro de tentáculo destruído inconsistente")
         if slots:
-            card= self.get_card(estado,"J1","CE-001")
-            if card["efeitos"][0].get("escape_dc")!=regra["escape_dc"]:
+            card=self.get_card(estado,"J1","CE-001")
+            if any(e.get("escape_dc")!=regra["escape_dc"]
+                   for e in card["efeitos"]):
                 raise UnresolvedRule("CD de fuga diverge da ficha Tentacle")
         return perfis
 
     def _libertar_tentaculo(self,estado,slot):
-        """Libera alvo e recurso, preservando o estado transacional."""
-        owl=self.get_card(estado,"J1","CE-001")
-        slots=estado["combate"].get("tentaculos_roper",{})
+        """Libera somente o vínculo solicitado e mantém outros Grappled."""
+        owl = self.get_card(estado, "J1", "CE-001")
+        slots = estado["combate"].get("tentaculos_roper", {})
         if str(slot) not in slots:
             raise InvalidAction("tentáculo não ocupa este slot")
-        self._estado_agarrado(estado,owl)
-        # Exclusivamente o efeito atual do recorte é removido.
-        if (len(owl["efeitos"])!=1
-                or owl["efeitos"][0].get("tentaculo")!=slot):
-            raise UnresolvedRule("efeito Tentacle incompatível com o slot")
-        owl["efeitos"]=[]
-        owl["condicoes"]=[]
+        self._estado_agarrado(estado, owl)
+        owl["efeitos"] = [
+            efeito for efeito in owl["efeitos"]
+            if efeito["tentaculo"] != slot
+        ]
         slots.pop(str(slot))
         if not slots:
-            estado["combate"].pop("tentaculos_roper",None)
+            estado["combate"].pop("tentaculos_roper", None)
+            owl["condicoes"] = []
+        self._estado_agarrado(estado, owl)
+        return not slots
 
     @staticmethod
     def _dado(valor, faces):
@@ -240,19 +302,18 @@ class MotorRoperBasico(MotorFichasPOC):
         if not slots:
             result["estado"] = "SEM_ALVO_AGARRADO"
             return result
-        if len(slots) != 1:
-            raise UnresolvedRule("múltiplos alvos ainda não homologados")
-        slot, data = next(iter(slots.items()))
-        if (not slot.isdigit() or not 1 <= int(slot) <= 6
-                or data.get("origem_id") != "AB-POC-017"
-                or data.get("alvo_id") != "CE-001"):
-            raise UnresolvedRule("tentáculo e alvo inválidos para Reel")
+        if any(data.get("origem_id") != "AB-POC-017"
+               or data.get("alvo_id") != "CE-001"
+               for data in slots.values()):
+            raise UnresolvedRule("tentáculo com origem/alvo divergente para Reel")
+        numeros = sorted(int(key) for key in slots)
         result["estado"] = "PRONTO_SEM_POSICIONAMENTO"
         result["executavel"] = True
         result["alvos"] = [{
             "carta_id": "CE-001",
-            "tentaculo_numero": int(slot),
+            "tentaculos_numeros": numeros,
             "condicoes": ["Grappled", "Poisoned"],
+            **({"tentaculo_numero": numeros[0]} if len(numeros) == 1 else {}),
         }]
         result["dados_necessarios"] = []
         result["efeito_espacial_aplicado"] = False
@@ -261,20 +322,12 @@ class MotorRoperBasico(MotorFichasPOC):
         return result
 
     def prevalidar_multiattack(self) -> dict:
-        """Consulta SRD em ordem, sem executar ataques nem consumir Action.
-
-        A ficha exige duas Tentacle, Reel e duas Bite na mesma Action.
-        A POC ignora alcance espacial; continuam pendentes as múltiplas
-        Tentacle em um alvo e a composição na economia de uma Action.
-        """
+        """Consulta pura da Action completa, sem executar dados ou recursos."""
         s = self.state
         result = {
             "acao": "MULTIATTACK_ROPER_TESTE",
-            "estado": "INAPLICAVEL",
-            "executavel": False,
-            "consome_acao": False,
-            "etapas": [],
-            "bloqueios": [],
+            "estado": "INAPLICAVEL", "executavel": False,
+            "consome_acao": False, "etapas": [], "bloqueios": [],
             "lacuna": None,
         }
         if s.get("fase") != "COMBATE" or s.get("ator_da_vez") != "J2":
@@ -284,31 +337,21 @@ class MotorRoperBasico(MotorFichasPOC):
         result["etapas"] = copy.deepcopy(multi["etapas"])
         result["origem_ficha_sha256"] = multi["sha256_documento"]
         result["tipo_acao_fonte"] = multi["tipo_acao"]
-        result["estado"] = "PENDENTE_COMPONENTES"
-        result["executavel_parcial"] = True
-        result["escopo_execucao_parcial"] = ESCOPO_MULTIATTACK
-        result["bloqueios"] = [
-            "segunda_Tentacle_e_alvo_ja_agarrado_sem_regra_integrada",
-            "grapple_duplo_nao_integrado_para_todos_cenarios",
-        ]
-        result["lacuna"] = (
-            "Multiattack verificado na ficha, mas não executável: "
-            "casos com dois Grappled simultâneos não são resolvidos. "
-            "Casos com até um vínculo ativo são executáveis em uma Action, "
-            "sem dependência de alcance ou arena"
-        )
+        result["estado"] = "PRONTO_GRAPPLE_MULTIPLO_APROVADO"
+        result["executavel"] = True
+        result["escopo_execucao"] = ESCOPO_MULTIATTACK
+        result["regra_homebrew"] = "GRAPPLE_MULTIPLO_FUGA_UNICA_19_10_2026"
         return result
 
     def _multiattack_roper_caso_seguro(self, s, params):
-        """Uma única Action transacional: 2 Tentacle, Reel, 2 Bite.
+        """Uma Action transacional: 2 Tentacle, Reel, 2 Bite.
 
-        Caso seguro documentado: no máximo um vínculo Tentacle ativo.
-        Um segundo acerto que criaria Grappled concorrente suspende
-        TODO o evento (apply trabalha sobre cópia), sem pontuar ou gastar turno.
-        Não calcula alcance, posições, direção ou deslocamento.
+        O alvo pode acumular vínculos independentes dos seis tentáculos;
+        as condições Grappled/Poisoned são únicas e Reel é único.
+        Sem posição, distância, movimento ou arena.
         """
         if params.get("aceite_escopo") != ESCOPO_MULTIATTACK:
-            raise UnresolvedRule("confirmar escopo parcial do Multiattack")
+            raise UnresolvedRule("confirmar escopo aprovado do Multiattack")
         tentaculos = params.get("tentaculos")
         bites = params.get("bites")
         if (not isinstance(tentaculos, list) or len(tentaculos) != 2
@@ -350,29 +393,14 @@ class MotorRoperBasico(MotorFichasPOC):
                 "critico": d20 == 20, "dano": 0,
             })
             if acertou:
-                if slots:
-                    raise UnresolvedRule(
-                        "dois vínculos Grappled no mesmo alvo ainda não integrados"
-                    )
-                alvo["condicoes"] = ["Grappled", "Poisoned"]
-                alvo["efeitos"].append({
-                    "tipo": "ROPER_TENTACLE_GRAPPLE",
-                    "fonte": "AB-POC-017", "alvo_id": "CE-001",
-                    "tentaculo": slot, "condicoes": ["Grappled", "Poisoned"],
-                    "escape_dc": regra["escape_dc"],
-                    "sha256_documento": regra["sha256_documento"],
-                })
-                slots[str(slot)] = {
-                    "origem_id": "AB-POC-017", "alvo_id": "CE-001",
-                    "sha256_documento": regra["sha256_documento"],
-                    "pv_atual": regra["tentaculo"]["pv"],
-                    "pv_max": regra["tentaculo"]["pv"],
-                }
+                self._agarrar_tentaculo(s, slot, regra)
+
 
         # Etapa 2: Reel está na ficha; no card game não há deslocamento.
         historico.append({
             "etapa": "Reel", "numero": 1,
             "alvos_agarrados": ["CE-001"] if slots else [],
+            "tentaculos_ativos": sorted(int(key) for key in slots),
             "deslocamento_aplicado": False,
         })
 
@@ -413,7 +441,7 @@ class MotorRoperBasico(MotorFichasPOC):
             })
             if alvo["pv_atual"] == 0:
                 # KO, cemitérios, condições e pontuação: um único evento.
-                encerramento = self._ko(s, "J2", "FIXTURE_SRD_MULTIATTACK_PARCIAL")
+                encerramento = self._ko(s, "J2", "FIXTURE_SRD_MULTIATTACK_GRAPPLE_MULTIPLO_APROVADO")
                 return {
                     "acao": "Multiattack", "componentes": historico,
                     "componentes_executados": len(historico),
@@ -564,8 +592,6 @@ class MotorRoperBasico(MotorFichasPOC):
                 raise InvalidAction("tentáculo já mantém alvo agarrado")
             if str(slot) in s["combate"].get("tentaculos_destruidos",{}):
                 raise InvalidAction("tentáculo destruído só volta no próximo turno Roper")
-            if ocupado:
-                raise UnresolvedRule("múltiplos tentáculos no mesmo alvo ainda não tratados")
             roll=params.get("d20_simulado")
             if not self._dado(roll,20):
                 raise InvalidAction("rolagem de ataque d20 simulada obrigatória")
@@ -585,25 +611,13 @@ class MotorRoperBasico(MotorFichasPOC):
                 "mecanica_parcial":True,"reel_pendente":False,
             }
             if acerto:
-                owl["condicoes"]=["Grappled","Poisoned"]
-                efeito={
-                    "tipo":"ROPER_TENTACLE_GRAPPLE",
-                    "fonte":"AB-POC-017","alvo_id":"CE-001",
-                    "tentaculo":slot,"condicoes":["Grappled","Poisoned"],
-                    "escape_dc":source["escape_dc"],
-                    "sha256_documento":source["sha256_documento"],
-                }
-                owl["efeitos"].append(efeito)
-                s["combate"]["tentaculos_roper"]={
-                    str(slot):{
-                        "origem_id":"AB-POC-017","alvo_id":"CE-001",
-                        "sha256_documento":source["sha256_documento"],
-                        "pv_atual":source["tentaculo"]["pv"],
-                        "pv_max":source["tentaculo"]["pv"],
-                    }
-                }
-                result["condicoes_aplicadas"]=["Grappled","Poisoned"]
-                result["escape_dc"]=source["escape_dc"]
+                ja_agarrado = bool(ocupado)
+                self._agarrar_tentaculo(s, slot, source)
+                result["condicoes_aplicadas"] = (
+                    [] if ja_agarrado else ["Grappled", "Poisoned"]
+                )
+                result["vinculo_tentaculo_criado"] = slot
+                result["escape_dc"] = source["escape_dc"]
             else:
                 result["condicoes_aplicadas"]=[]
             result.update(self._proximo_turno(s,actor))
@@ -616,9 +630,9 @@ class MotorRoperBasico(MotorFichasPOC):
                 raise UnresolvedRule("confirmar escopo de fuga por Action")
             pair=self._perfis(s)
             slots=s["combate"].get("tentaculos_roper",{})
-            if len(slots)!=1:
-                raise InvalidAction("a criatura não está agarrada no recorte")
-            slot_str=next(iter(slots))
+            if not slots:
+                raise InvalidAction("a criatura não está agarrada")
+            slots_antes = sorted(int(key) for key in slots)
             habilidade=params.get("pericia")
             mods=pair["J1"][1]["testes_fuga"]
             if habilidade not in mods:
@@ -645,12 +659,14 @@ class MotorRoperBasico(MotorFichasPOC):
                 raise InvalidAction(str(exc)) from exc
             sucesso=teste["sucesso"]
             if sucesso:
-                self._libertar_tentaculo(s,int(slot_str))
+                self._libertar_todos_tentaculos(s)
             result={
                 "acao":"ESCAPAR_GRAPPLE","pericia":habilidade,
                 **teste,
                 "condicoes_removidas":(["Grappled","Poisoned"] if sucesso else []),
-                "slot_liberado":int(slot_str) if sucesso else None,
+                "slots_liberados":slots_antes if sucesso else [],
+                "slot_liberado":slots_antes[0] if sucesso and len(slots_antes)==1 else None,
+                "regra_homebrew":"GRAPPLE_MULTIPLO_FUGA_UNICA_19_10_2026",
                 "mecanica_parcial":True,
             }
             result.update(self._proximo_turno(s,actor))
@@ -698,8 +714,9 @@ class MotorRoperBasico(MotorFichasPOC):
             antes=tentaculo["pv_atual"]
             tentaculo["pv_atual"]=max(0,antes-aplicado)
             destruido=tentaculo["pv_atual"]==0
+            ultimo_vinculo_liberado = False
             if destruido:
-                self._libertar_tentaculo(s,slot)
+                ultimo_vinculo_liberado = self._libertar_tentaculo(s,slot)
                 s["combate"].setdefault("tentaculos_destruidos",{})[str(slot)]={
                     "sha256_documento":regra["sha256_documento"]
                 }
@@ -713,7 +730,9 @@ class MotorRoperBasico(MotorFichasPOC):
                 "dano_aplicado":aplicado,"pv_tentaculo_antes":antes,
                 "pv_tentaculo_depois":max(0,antes-aplicado),
                 "destruido":destruido,
-                "condicoes_removidas":(["Grappled","Poisoned"] if destruido else []),
+                "condicoes_removidas":(
+                    ["Grappled","Poisoned"] if ultimo_vinculo_liberado else []
+                ),
                 "pv_roper_inalterados":self.get_card(s,"J2","AB-POC-017")["pv_atual"],
                 "dados_simulados":True,"mecanica_parcial":True,
             }
