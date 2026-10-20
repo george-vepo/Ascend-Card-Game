@@ -1,6 +1,6 @@
 # Ascend Card Game — checkpoint verificável de desenvolvimento
 
-**Atualizado:** 2026-10-19. **Base de código:** `main` após o PR #36; commit `6aad0de3a244cb1ed8a10d6482932205e45fc452`.
+**Atualizado:** 2026-10-19. **Base de código:** `main` após o PR #38; commit `e2e1c5e12bf573e181cc2f903ce10c54d7f11301`.
 
 ## Fonte da verdade e arquitetura
 
@@ -28,8 +28,9 @@
 | [PR #31](https://github.com/george-vepo/Ascend-Card-Game/pull/31) | **Decisão delegada #30:** Detect Evil and Good e Detect Magic como Actions de detecção só do campo público, concentração 100 rodadas e salvaguarda Constituição sob dano; Clairvoyance sem locais/10 minutos é inaplicável e não consome 1/Day | `2a547c07ce5045831a5cb2ec9bdfed73f64ecb2c` | [210 testes aprovados](https://github.com/george-vepo/Ascend-Card-Game/actions/runs/39356307864) e [81 regressões](https://github.com/george-vepo/Ascend-Card-Game/actions/runs/39356307710), cinco workflows verdes |
 | [PR #33](https://github.com/george-vepo/Ascend-Card-Game/pull/33) | Próxima criatura: **Gibbering Mouther** com ficha SRD p. 288 estritamente verificada, inventário de Gibbering/Wis DC10+d8, Blinding Spittle Dex DC10/Recharge 5–6/Blinded, Bite e Aberrant Ground; preflight público puro sem executar efeitos não regulamentados | `885b1aa1029dacdca2ba06f9fc895d7cdbdb4b0f` | [16 testes aprovados](https://github.com/george-vepo/Ascend-Card-Game/actions/runs/39357381590) no workflow Mouther; estrutura, ponte e referências do Catálogo SRD também aprovadas |
 | [PR #36](https://github.com/george-vepo/Ascend-Card-Game/pull/36) | **Mudança arquitetural aprovada, issue #35:** ponte de propostas da IA com declaração autenticada, ficha/versão/hash conferidos, pacote de rolagens da fixture e execução limitada em passos/lotes com status público e replay idempotente de KO. Não há modelo real conectado nem worker independente ativo. | `6aad0de3a244cb1ed8a10d6482932205e45fc452` | [235 testes aprovados](https://github.com/george-vepo/Ascend-Card-Game/actions/runs/39367692596), quatro workflows verdes (inclui 25 testes novos de bridge) |
+| [PR #38](https://github.com/george-vepo/Ascend-Card-Game/pull/38) | Fila SQLite **durável** para jobs de simulação em background: lease, fencing, heartbeat, cancelamento, retomada sob entrada externa validada, tick de worker injetado, somente metadados públicos, nenhuma ficha/deck/checkpoint privado persistido na fila. Modelo e daemon não conectados. | `e2e1c5e12bf573e181cc2f903ce10c54d7f11301` | [24 testes aprovados](https://github.com/george-vepo/Ascend-Card-Game/actions/runs/39368323012), três workflows verdes: fila background, estrutura, referências externas. |
 
-**Contagens dos workflows:** os 81 testes da suíte de fuga/destruição são repetidos parcialmente no workflow principal. Não somar esses totais como testes independentes. Quatro workflows do PR #36 foram aprovados (Roper/árbitro IA, estrutura, ponte de identidades e referências do Catálogo). Também constam neste histórico quatro workflows do PR #33. Os cinco workflows do PR #31 também estão documentados no histórico: Roper, fuga/destruição, estrutura, ponte e referências do Catálogo SRD.
+**Contagens dos workflows:** os 81 testes da suíte de fuga/destruição são repetidos parcialmente no workflow principal. Não somar esses totais como testes independentes. Três workflows do PR #38 foram aprovados (fila background, estrutura, referências do catálogo). Quatro workflows do PR #36 também foram aprovados (Roper/árbitro IA, estrutura, ponte de identidades e referências do Catálogo). Também constam neste histórico quatro workflows do PR #33. Os cinco workflows do PR #31 também estão documentados no histórico: Roper, fuga/destruição, estrutura, ponte e referências do Catálogo SRD.
 
 ## Arquivos e módulos atuais relevantes
 
@@ -52,7 +53,10 @@
 - `docs/POC_GIBBERING_MOUTHER_PREVALIDACAO.md`: lacunas e estado consultivo da próxima criatura.
 - `experimental/integration/arbitro_ia_background.py`: MVP de protocolo seguro de proposta IA e simulação por passos, sem modelo ou scheduler durável.
 - `tests/integration/test_arbitro_ia_background_real.py`: 25 cenários de autoria, fonte, sorteio simulado externo, rejeição de mutações, KO e replay.
-- `docs/POC_ARBITRO_IA_SIMULACAO_BACKGROUND.md`: contrato e limitações do worker de background; [issue #35](https://github.com/george-vepo/Ascend-Card-Game/issues/35) continua aberta para implementação integral.
+- `docs/POC_ARBITRO_IA_SIMULACAO_BACKGROUND.md`: contrato, fila e limitações do worker de background; [issue #35](https://github.com/george-vepo/Ascend-Card-Game/issues/35) continua aberta para implementação integral.
+- `src/ascend/fila_simulacao_background.py`: fila SQLite de jobs, reserva de lease com fencing, heartbeat, cancelamento, status público e tick externo de worker.
+- `tests/integration/test_fila_simulacao_background.py`: 24 testes de lease, concorrência, segurança de resumo, durabilidade de status e execução por tick.
+- `.github/workflows/validate-fila-simulacao-background.yml`: CI da fila SQLite.
 - `docs/poc/00_Governanca/DECISAO_20261019_GRAPPLE_MULTIPLO_ROPER.md`: homebrew aprovado, distinto do SRD.
 - `docs/ROPER_MULTIATTACK_ATOMICO_PARCIAL.md`: limite de escopo, dados simulados, Action única e rollback.
 - `.github/workflows/validate-roper-basico.yml`: regressão de todos os componentes do Roper.
@@ -68,7 +72,7 @@
 
 **NOVA DIRETRIZ DA ARQUITETURA (20/10/2026):** a IA deve **simular os combates em segundo plano**, interpretando fichas e ações, não apenas validando golpes isolados. Foi aprovada a separação IA planejadora/árbitra → rolagens externas → motor de estado determinístico, sem perder privacidade nem a prioridade das regras; [issue #35](https://github.com/george-vepo/Ascend-Card-Game/issues/35) está **aberta**. Não retomar implementação manual criatura a criatura como estratégia principal. A infraestrutura de PR #36 cobre **somente um contrato seguro e execução por passos** de fixture com propostas externas; não há IA real/worker persistente executando fora da sessão neste estágio.
 
-**Próximo incremento seguro:** construir fila durável e worker de simulação desacoplado da interface, com estado de processamento, lease/fencing, cancelamento e retorno de progresso público. Persistir checkpoints privados em armazenamento restrito separado do histórico público; conectar somente depois um gateway real de modelo e sorteador verificável, preservando `PENDENTE_REGRA` para efeitos ainda não implementados. O motor continua experimental, **não equivale a combate SRD integral**.
+**Próximo incremento seguro:** a fila SQLite/lease/fencing de **metadados públicos já existe** (PR #38). Agora implementar **armazenamento privado confiável dos checkpoints**, retomada consistente após reinício, processo independente de worker que execute `JobSimulacao` a partir dessa referência, gateway de modelo de IA conectado e serviço externo de rolagens verificáveis. Somente então o modo background estará realmente operacional. O motor continua experimental, **não equivale a combate SRD integral**.
 
 **Partida oficial:** não iniciada. **Placar oficial:** J1 0 × 0 J2. **Rolagens em CI:** simuladas, externas e explícitas. Não publicar mãos, decks privados, ordem de montes nem snapshots de estado competitivo real.
 
