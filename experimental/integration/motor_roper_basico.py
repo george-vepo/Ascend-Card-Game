@@ -1,7 +1,8 @@
 """Terceira criatura SRD: Bite e Tentacle isolados Roper × Giant Owl.
 
-NÃO é combate SRD completo: Reel, Multiattack, Spider Climb, Flyby,
-movimento, recursos e magias continuam sem resolução neste recorte.
+NÃO é combate SRD completo: Multiattack suporta somente casos sem dois
+grapples simultâneos, Spider Climb, Flyby, recursos e magias seguem
+parciais. Reel e ataques ignoram movimento e alcance espacial na POC.
 Somente cópias com ficha verificada no Catálogo SRD pinado.
 Dados são simulados e explícitos em fixtures, sem RNG; o jogo não usa posições ou alcance espacial.
 """
@@ -23,6 +24,7 @@ from motor_poc import MotorPOC, InvalidAction, UnresolvedRule, SIDES, other
 from motor_fichas_poc import MotorFichasPOC, SessaoFichasFixture
 
 ESCOPO_BASICO = "ATAQUE_INDIVIDUAL_SEM_MULTIATAQUE_OU_PASSIVOS"
+ESCOPO_MULTIATTACK = "MULTIATTACK_ATOMICO_CASOS_SEM_GRAPPLE_DUPLO"
 DUELO_ROPER = {"J1": "CE-001", "J2": "AB-POC-017"}
 
 
@@ -283,16 +285,156 @@ class MotorRoperBasico(MotorFichasPOC):
         result["origem_ficha_sha256"] = multi["sha256_documento"]
         result["tipo_acao_fonte"] = multi["tipo_acao"]
         result["estado"] = "PENDENTE_COMPONENTES"
+        result["executavel_parcial"] = True
+        result["escopo_execucao_parcial"] = ESCOPO_MULTIATTACK
         result["bloqueios"] = [
             "segunda_Tentacle_e_alvo_ja_agarrado_sem_regra_integrada",
-            "economia_de_acao_composta_nao_integrada",
+            "grapple_duplo_nao_integrado_para_todos_cenarios",
         ]
         result["lacuna"] = (
             "Multiattack verificado na ficha, mas não executável: "
-            "falta integrar segunda Tentacle no alvo e executar a sequência "
-            "completa como uma única Action; não existe alcance espacial na POC"
+            "casos com dois Grappled simultâneos não são resolvidos. "
+            "Casos com até um vínculo ativo são executáveis em uma Action, "
+            "sem dependência de alcance ou arena"
         )
         return result
+
+    def _multiattack_roper_caso_seguro(self, s, params):
+        """Uma única Action transacional: 2 Tentacle, Reel, 2 Bite.
+
+        Caso seguro documentado: no máximo um vínculo Tentacle ativo.
+        Um segundo acerto que criaria Grappled concorrente suspende
+        TODO o evento (apply trabalha sobre cópia), sem pontuar ou gastar turno.
+        Não calcula alcance, posições, direção ou deslocamento.
+        """
+        if params.get("aceite_escopo") != ESCOPO_MULTIATTACK:
+            raise UnresolvedRule("confirmar escopo parcial do Multiattack")
+        tentaculos = params.get("tentaculos")
+        bites = params.get("bites")
+        if (not isinstance(tentaculos, list) or len(tentaculos) != 2
+                or not isinstance(bites, list) or len(bites) != 2):
+            raise InvalidAction("exigir dois Tentacle e dois Bite em sequência")
+        if any(not isinstance(v, dict) for v in tentaculos + bites):
+            raise InvalidAction("etapas Multiattack devem ser mapas de rolagem")
+        perfis = self._perfis(s)
+        perfil = perfis["J2"][1]
+        etapas = perfil["multiattack"]["etapas"]
+        if etapas != [
+                {"ataque": "Tentacle", "quantidade": 2},
+                {"ataque": "Reel", "quantidade": 1},
+                {"ataque": "Bite", "quantidade": 2}]:
+            raise UnresolvedRule("composição Multiattack não confere com ficha")
+        regra = perfil["tentaculo"]
+        alvo = self.get_card(s, "J1", "CE-001")
+        slots = s["combate"].setdefault("tentaculos_roper", {})
+        ids_usados = set()
+        historico = []
+
+        # Etapa 1: duas tentativas; cada ataque é individual e sem dano.
+        for i, entry in enumerate(tentaculos, 1):
+            slot, d20 = entry.get("tentaculo_numero"), entry.get("d20_simulado")
+            if (type(slot) is not int
+                    or not 1 <= slot <= regra["quantidade_tentaculos"]
+                    or slot in ids_usados or str(slot) in slots
+                    or str(slot) in s["combate"].get("tentaculos_destruidos", {})):
+                raise InvalidAction("Tentacle repetido, ocupado, destruído ou inválido")
+            if not self._dado(d20, 20):
+                raise InvalidAction("d20 simulado de Tentacle inválido")
+            ids_usados.add(slot)
+            bonus = regra["bonus_ataque"]
+            acertou = d20 == 20 or (d20 != 1 and d20 + bonus >= perfis["J1"][1]["ac"])
+            historico.append({
+                "etapa": "Tentacle", "numero": i, "tentaculo": slot,
+                "d20_simulado": d20, "bonus": bonus, "total": d20 + bonus,
+                "ca": perfis["J1"][1]["ac"], "acertou": acertou,
+                "critico": d20 == 20, "dano": 0,
+            })
+            if acertou:
+                if slots:
+                    raise UnresolvedRule(
+                        "dois vínculos Grappled no mesmo alvo ainda não integrados"
+                    )
+                alvo["condicoes"] = ["Grappled", "Poisoned"]
+                alvo["efeitos"].append({
+                    "tipo": "ROPER_TENTACLE_GRAPPLE",
+                    "fonte": "AB-POC-017", "alvo_id": "CE-001",
+                    "tentaculo": slot, "condicoes": ["Grappled", "Poisoned"],
+                    "escape_dc": regra["escape_dc"],
+                    "sha256_documento": regra["sha256_documento"],
+                })
+                slots[str(slot)] = {
+                    "origem_id": "AB-POC-017", "alvo_id": "CE-001",
+                    "sha256_documento": regra["sha256_documento"],
+                    "pv_atual": regra["tentaculo"]["pv"],
+                    "pv_max": regra["tentaculo"]["pv"],
+                }
+
+        # Etapa 2: Reel está na ficha; no card game não há deslocamento.
+        historico.append({
+            "etapa": "Reel", "numero": 1,
+            "alvos_agarrados": ["CE-001"] if slots else [],
+            "deslocamento_aplicado": False,
+        })
+
+        # Etapa 3: dois Bite na mesma Action, interrompidos imediatamente no KO.
+        ataque = perfil["attack"]
+        if ataque["name"] != "Bite":
+            raise UnresolvedRule("Bite divergente da ficha do Roper")
+        for i, entry in enumerate(bites, 1):
+            d20 = entry.get("d20_simulado")
+            if not self._dado(d20, 20):
+                raise InvalidAction("d20 simulado de Bite inválido")
+            critico = d20 == 20
+            acertou = critico or (d20 != 1 and
+                                 d20 + ataque["bonus"] >= perfis["J1"][1]["ac"])
+            quantidade = ataque["dice"][0] * (2 if critico else 1) if acertou else 0
+            dados = entry.get("dano_dados", [])
+            if (not isinstance(dados, list) or len(dados) != quantidade
+                    or not all(self._dado(d, ataque["dice"][1]) for d in dados)):
+                raise InvalidAction("dados de dano Bite incompatíveis com a rolagem")
+            bruto = max(0, sum(dados) + ataque["flat"]) if acertou else 0
+            defesa = perfis["J1"][1]
+            if ataque["type"] in defesa["immunities"]:
+                aplicado = 0
+            elif ataque["type"] in defesa["resistances"]:
+                aplicado = bruto // 2
+            else:
+                aplicado = bruto
+            antes = alvo["pv_atual"]
+            alvo["pv_atual"] = max(0, antes - aplicado)
+            historico.append({
+                "etapa": "Bite", "numero": i, "d20_simulado": d20,
+                "bonus": ataque["bonus"], "total": d20 + ataque["bonus"],
+                "ca": defesa["ac"], "critico": critico,
+                "acertou": acertou, "dano_dados_simulados": list(dados),
+                "modificador_dano": ataque["flat"] if acertou else 0,
+                "dano_bruto": bruto, "dano_aplicado": aplicado,
+                "pv_antes": antes, "pv_depois": alvo["pv_atual"],
+            })
+            if alvo["pv_atual"] == 0:
+                # KO, cemitérios, condições e pontuação: um único evento.
+                encerramento = self._ko(s, "J2", "FIXTURE_SRD_MULTIATTACK_PARCIAL")
+                return {
+                    "acao": "Multiattack", "componentes": historico,
+                    "componentes_executados": len(historico),
+                    "interrompido_por_ko": True,
+                    "encerramento_tentaculos": encerramento,
+                    "pontuacao_fixture": copy.deepcopy(s["placar"]),
+                    "origem_ficha_sha256": perfil["multiattack"]["sha256_documento"],
+                    "dados_simulados": True, "mecanica_parcial": True,
+                    "regra_poc": "SEM_POSICIONAMENTO_15_10_2026",
+                }
+
+        resultado = {
+            "acao": "Multiattack", "componentes": historico,
+            "componentes_executados": len(historico),
+            "interrompido_por_ko": False,
+            "origem_ficha_sha256": perfil["multiattack"]["sha256_documento"],
+            "dados_simulados": True, "mecanica_parcial": True,
+            "regra_poc": "SEM_POSICIONAMENTO_15_10_2026",
+        }
+        resultado.update(self._proximo_turno(s, "J2"))
+        return resultado
 
     def _transition(self, s, actor, command, params):
         if command == "INICIATIVA_ROPER_TESTE":
@@ -602,8 +744,7 @@ class MotorRoperBasico(MotorFichasPOC):
             if actor != "J2":
                 raise InvalidAction("Multiattack pertence ao Roper do J2")
             self._gate(s, "COMBATE", actor)
-            diagnostico = self.prevalidar_multiattack()
-            raise UnresolvedRule(diagnostico["lacuna"])
+            return self._multiattack_roper_caso_seguro(s, params)
 
         if command == "SPIDER_CLIMB_ROPER_TESTE":
             raise UnresolvedRule(

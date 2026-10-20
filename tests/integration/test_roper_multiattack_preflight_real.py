@@ -112,7 +112,8 @@ class MultiattackRoperPreflight(unittest.TestCase):
         self.assertEqual([s["ataque"] for s in x["etapas"]],
                          ["Tentacle", "Reel", "Bite"])
         self.assertEqual([s["quantidade"] for s in x["etapas"]], [2, 1, 2])
-        self.assertIn("economia_de_acao_composta_nao_integrada",
+        self.assertTrue(x["executavel_parcial"])
+        self.assertIn("grapple_duplo_nao_integrado_para_todos_cenarios",
                       x["bloqueios"])
         self.assertNotIn("Reel_requer_arena_e_posicionamento_aprovados",
                          x["bloqueios"])
