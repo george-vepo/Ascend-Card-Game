@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SRD Card Game · Resultado de combate</title>
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./pages.css">
+  <script src="./core.js" defer></script>
+  <script src="./pages.js" defer></script>
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <div class="brand"><div class="brand-icon" aria-hidden="true">⚔</div><div><p class="eyebrow">SRD CARD GAME</p><h1>Ascend Card Game</h1></div></div>
+      <span class="environment">GITHUB PAGES · DEMONSTRAÇÃO</span>
+    </header>
+    <main>
+      <section class="intro">
+        <p class="section-kicker">REGISTRO DE BATALHA EXTERNA</p>
+        <h2>A IA luta. Você registra o resultado.</h2>
+        <p>Simule a batalha no ChatGPT. Depois informe o vencedor e seus PV restantes aqui. Você pode preparar outras criaturas a cada combate para testar a experiência.</p>
+        <div class="notice"><span aria-hidden="true">ⓘ</span><span><strong>Modo local, não oficial:</strong> este site não se conecta ao motor Python nem ao catálogo. Os nomes, IDs, CA e PV são informados por você. O progresso fica <strong>somente neste navegador</strong>, não é compartilhado com outros jogadores e não verifica as regras da simulação.</span></div>
+      </section>
+
+      <section class="board" aria-labelledby="board-title">
+        <div class="board-heading"><div><p class="section-kicker">MESA DE DEMONSTRAÇÃO</p><h2 id="board-title">Combate <span id="combat-number">1</span></h2></div><div class="board-meta"><span id="phase">Configuração</span><span id="current-version">V0</span></div></div>
+        <div class="score" aria-label="Placar de demonstração">
+          <div><span class="side-name">JOGADOR 1</span><strong id="score-j1">0</strong></div>
+          <div class="score-divider">×</div>
+          <div><span class="side-name">JOGADOR 2</span><strong id="score-j2">0</strong></div>
+        </div>
+        <div class="fighters">
+          <article class="fighter"><div class="fighter-label">J1 · CAMPO</div><h3 id="name-j1">Sem criatura</h3><p id="id-j1" class="identifier">—</p><div class="stats"><span>CA <b id="ac-j1">—</b></span><span>PV <b id="hp-j1">—</b></span></div></article>
+          <div class="vs" aria-hidden="true">VS</div>
+          <article class="fighter"><div class="fighter-label">J2 · CAMPO</div><h3 id="name-j2">Sem criatura</h3><p id="id-j2" class="identifier">—</p><div class="stats"><span>CA <b id="ac-j2">—</b></span><span>PV <b id="hp-j2">—</b></span></div></article>
+        </div>
+        <div class="board-bottom"><span id="cemetery-summary">Cemitério: J1 0 · J2 0</span><span id="storage-label">Salvo neste navegador</span></div>
+      </section>
+
+      <section class="entry" id="setup-section" aria-labelledby="setup-title">
+        <div class="board-heading"><div><p class="section-kicker">PASSO 1 · FICHAS PÚBLICAS</p><h2 id="setup-title">Preparar combate</h2></div><span class="step-label">Preenchimento manual</span></div>
+        <p class="muted">Transcreva os dados públicos das fichas do catálogo/ChatGPT. Nenhuma criatura ou atributo será inventado pelo site.</p>
+        <form id="setup-form">
+          <div class="setup-grid">
+            <fieldset class="setup-player"><legend>J1 · Criatura</legend>
+              <label>Nome da criatura<input required id="setup-name-j1" maxlength="90" placeholder="Nome canônico" autocomplete="off"></label>
+              <label>ID da cópia<input required id="setup-id-j1" maxlength="80" placeholder="Ex.: CE-001" pattern="[A-Za-z0-9_:-]+" autocomplete="off"></label>
+              <div class="setup-stats">
+                <label>PV máximo<input required id="setup-max-j1" type="number" min="1" max="100000" step="1"></label>
+                <label>PV atuais<input required id="setup-hp-j1" type="number" min="1" max="100000" step="1"></label>
+                <label>CA <span class="muted">(opcional)</span><input id="setup-ac-j1" type="number" min="0" max="100" step="1"></label>
+              </div>
+              <p class="survivor-note" id="survivor-j1" hidden>Sobrevivente do combate anterior: dados e PV preservados.</p>
+            </fieldset>
+            <fieldset class="setup-player"><legend>J2 · Criatura</legend>
+              <label>Nome da criatura<input required id="setup-name-j2" maxlength="90" placeholder="Nome canônico" autocomplete="off"></label>
+              <label>ID da cópia<input required id="setup-id-j2" maxlength="80" placeholder="Ex.: AB-POC-017" pattern="[A-Za-z0-9_:-]+" autocomplete="off"></label>
+              <div class="setup-stats">
+                <label>PV máximo<input required id="setup-max-j2" type="number" min="1" max="100000" step="1"></label>
+                <label>PV atuais<input required id="setup-hp-j2" type="number" min="1" max="100000" step="1"></label>
+                <label>CA <span class="muted">(opcional)</span><input id="setup-ac-j2" type="number" min="0" max="100" step="1"></label>
+              </div>
+              <p class="survivor-note" id="survivor-j2" hidden>Sobrevivente do combate anterior: dados e PV preservados.</p>
+            </fieldset>
+          </div>
+          <button type="submit" class="primary">Preparar combate <span aria-hidden="true">↗</span></button>
+        </form>
+      </section>
+
+      <section class="entry" id="result-section" aria-labelledby="entry-title" hidden>
+        <div class="board-heading"><div><p class="section-kicker">PASSO 2 · RESULTADO DA IA</p><h2 id="entry-title">Registrar desfecho</h2></div><span class="step-label">Um resultado por combate</span></div>
+        <form id="result-form">
+          <fieldset><legend>Quem venceu?</legend>
+            <div class="winner-options">
+              <label class="winner-option"><input type="radio" name="winner" value="J1" required><span><small>JOGADOR 1</small><strong id="winner-name-j1">—</strong></span><span class="tick" aria-hidden="true">✓</span></label>
+              <label class="winner-option"><input type="radio" name="winner" value="J2"><span><small>JOGADOR 2</small><strong id="winner-name-j2">—</strong></span><span class="tick" aria-hidden="true">✓</span></label>
+            </div>
+          </fieldset>
+          <div class="hp-row"><label for="remaining-hp"><span>PV restantes do vencedor</span><small id="pv-rule">Selecione o vencedor.</small></label>
+            <div class="number-control"><input type="number" id="remaining-hp" name="remainingHp" min="1" step="1" required placeholder="Ex.: 12"><span id="max-hp">/ — PV máx.</span></div>
+          </div>
+          <div class="preview"><span aria-hidden="true">➜</span><p><strong>Ao confirmar:</strong> o derrotado vai para o cemitério com 0 PV, o vencedor permanece no campo com os PV informados e ganha 1 ponto neste registro local.</p></div>
+          <label class="confirmation"><input id="confirm" type="checkbox" required><span>Confirmo que a IA simulou a batalha externamente e que estou registrando manualmente esse resultado <strong>não verificado</strong>.</span></label>
+          <button class="primary" type="submit" id="submit-result">Registrar resultado <span aria-hidden="true">↗</span></button>
+        </form>
+      </section>
+
+      <section class="after" id="after" hidden>
+        <div class="after-icon" aria-hidden="true">✓</div>
+        <div><p class="section-kicker">RESULTADO REGISTRADO LOCALMENTE</p><h2 id="after-title">Combate encerrado</h2><p id="after-details"></p><p class="muted">Transcrição manual, não homologação SRD. Nenhuma partida oficial alterada.</p><button type="button" id="next" class="primary">Preparar próximo combate →</button></div>
+      </section>
+
+      <section class="board" aria-labelledby="history-title">
+        <div class="board-heading"><div><p class="section-kicker">HISTÓRICO PÚBLICO LOCAL</p><h2 id="history-title">Resultados</h2></div><button type="button" id="reset" class="text-button">Reiniciar demonstração</button></div>
+        <div id="history" class="history"><p class="muted">Nenhum combate registrado neste navegador.</p></div>
+      </section>
+    </main>
+    <footer>Ascend Card Game · GitHub Pages · Armazenamento local de demonstração · Sem partida oficial</footer>
+  </div>
+</body>
+</html>
