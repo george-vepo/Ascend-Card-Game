@@ -6,6 +6,7 @@ on:
       - "experimental/integration/motor_roper_basico.py"
       - "src/ascend/tentaculo_roper_srd.py"
       - "src/ascend/habilidades_poc_srd.py"
+      - "src/ascend/magias_owl_poc.py"
       - "tests/integration/test_roper_tentacle_real.py"
       - "src/ascend/fuga_roper_srd.py"
       - "src/ascend/testes_d20_srd.py"
@@ -19,6 +20,7 @@ on:
       - "tests/integration/test_roper_multiattack_atomic_safe_real.py"
       - "tests/integration/test_roper_grapple_multiplo_real.py"
       - "tests/integration/test_habilidades_poc_srd_real.py"
+      - "tests/integration/test_owl_spellcasting_publico_real.py"
       - ".github/workflows/validate-roper-basico.yml"
   workflow_dispatch:
 
@@ -60,3 +62,4 @@ jobs:
           python -m unittest discover -s tests/integration -p test_roper_multiattack_atomic_safe_real.py -v
           python -m unittest discover -s tests/integration -p test_roper_grapple_multiplo_real.py -v
           python -m unittest discover -s tests/integration -p test_habilidades_poc_srd_real.py -v
+          python -m unittest discover -s tests/integration -p test_owl_spellcasting_publico_real.py -v
