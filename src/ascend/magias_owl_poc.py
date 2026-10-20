@@ -64,7 +64,7 @@ def detectar_publico(estado: dict, magia: str) -> dict:
             for jogador, card_id, _ in alvos
             if TIPO_POR_ID[card_id] in CATEGORIAS_DETECT_EVIL_GOOD
         ]
-        base["hallow_detectado"] = False
+        base["hallow_detectado"] = None
         base["hallow_fonte"] = "SEM_EFEITO_HALLOW_PUBLICO_HOMOLOGADO"
     else:
         # Fonte de magia concreta nesta fixture: Concentração com SRD
