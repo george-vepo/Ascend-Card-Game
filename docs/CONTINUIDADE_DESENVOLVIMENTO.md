@@ -1,6 +1,6 @@
 # Ascend Card Game — checkpoint verificável de desenvolvimento
 
-**Atualizado:** 2026-10-19. **Base de código:** `main` após o PR #23; commit `92cefa9357d3f48a8fb652bb2b1e1239842f248c`.
+**Atualizado:** 2026-10-19. **Base de código:** `main` após o PR #26; commit `74422eb458457380477deb1e3036598b06934e26`.
 
 ## Fonte da verdade e arquitetura
 
@@ -23,8 +23,9 @@
 | [PR #18](https://github.com/george-vepo/Ascend-Card-Game/pull/18) | Multiattack: sequência verificada, execução bloqueada | `71971a0873523374f4c0a52e6652f017789bcdc0` | [138 testes aprovados](https://github.com/george-vepo/Ascend-Card-Game/actions/runs/39325453504) e [81 testes de regressão](https://github.com/george-vepo/Ascend-Card-Game/actions/runs/39325453465) |
 | [PR #21](https://github.com/george-vepo/Ascend-Card-Game/pull/21) | Sem arena nem alcance; Reel individual sem deslocamento; Multiattack ainda bloqueado por composição | `7b0cda4950abdbdc1fd202d0f129345d2566e989` | [138 testes aprovados](https://github.com/george-vepo/Ascend-Card-Game/actions/runs/39327919830) e [81 testes de regressão](https://github.com/george-vepo/Ascend-Card-Game/actions/runs/39327919896); cinco workflows verdes |
 | [PR #23](https://github.com/george-vepo/Ascend-Card-Game/pull/23) | Multiattack atômico do Roper (2 Tentacle, Reel, 2 Bite) em casos com até um vínculo Grappled; duplo vínculo retorna PENDENTE sem mutação | `92cefa9357d3f48a8fb652bb2b1e1239842f248c` | [154 testes aprovados](https://github.com/george-vepo/Ascend-Card-Game/actions/runs/39352157314) na suíte Roper e [81 testes de regressão](https://github.com/george-vepo/Ascend-Card-Game/actions/runs/39352157313); cinco workflows verdes |
+| [PR #26](https://github.com/george-vepo/Ascend-Card-Game/pull/26) | **Homebrew aprovado:** múltiplos tentáculos por alvo, fuga única libera todos, destruição isolada conserva demais, Reel alvo único, KO limpa tudo e Multiattack completo na Action | `74422eb458457380477deb1e3036598b06934e26` | [170 testes aprovados](https://github.com/george-vepo/Ascend-Card-Game/actions/runs/39353711185) e [81 de regressão](https://github.com/george-vepo/Ascend-Card-Game/actions/runs/39353711192), cinco workflows verdes |
 
-**Contagens dos workflows:** os 81 testes da suíte de fuga/destruição são repetidos parcialmente no workflow principal. Não somar esses totais como testes independentes. Cinco workflows do PR #23 foram aprovados: Roper, fuga/destruição, estrutura, ponte e referências do Catálogo SRD.
+**Contagens dos workflows:** os 81 testes da suíte de fuga/destruição são repetidos parcialmente no workflow principal. Não somar esses totais como testes independentes. Cinco workflows do PR #26 foram aprovados: Roper, fuga/destruição, estrutura, ponte e referências do Catálogo SRD.
 
 ## Arquivos e módulos atuais relevantes
 
@@ -33,20 +34,22 @@
 - `src/ascend/perfil_combate_srd.py`, `src/ascend/fuga_roper_srd.py`, `src/ascend/testes_d20_srd.py`: perfis, fuga, dados explícitos/desvantagem.
 - `tests/integration/test_roper_ko_grapple_cleanup_real.py`: nove casos novos do PR #17.
 - `tests/integration/test_roper_multiattack_preflight_real.py`: doze casos do PR #18, ajustados para indicar execução parcial.
-- `tests/integration/test_roper_multiattack_atomic_safe_real.py`: dezesseis cenários do PR #23.
+- `tests/integration/test_roper_multiattack_atomic_safe_real.py`: dezesseis cenários do PR #23, atualizados para Grappled múltiplo.
+- `tests/integration/test_roper_grapple_multiplo_real.py`: dezesseis cenários novos do PR #26.
+- `docs/poc/00_Governanca/DECISAO_20261019_GRAPPLE_MULTIPLO_ROPER.md`: homebrew aprovado, distinto do SRD.
 - `docs/ROPER_MULTIATTACK_ATOMICO_PARCIAL.md`: limite de escopo, dados simulados, Action única e rollback.
 - `.github/workflows/validate-roper-basico.yml`: regressão de todos os componentes do Roper.
 - `docs/ROPER_KO_GRAPPLE_CLEANUP.md` e `docs/ROPER_MULTIATTACK_PREVALIDACAO.md`: escopo e limites por incremento.
 
 ## Estado mecânico e bloqueios
 
-**No recorte experimental:** Bite e Tentacle individuais (sem exigência de alcance), Grappled/Poisoned, fuga com desvantagem Poisoned, ataque e destruição/regeneração de tentáculos, limpeza de vínculos em KO, preflight puro de Reel/Multiattack, Action Reel individual executável **sem deslocamento** quando há Grappled válido e Multiattack executável **em uma Action** no subconjunto sem dois Grappled simultâneos, com 16 novos testes e rollback transacional em cenários não integrados. Todos exigem fontes verificadas e não são combate SRD integral.
+**No recorte experimental:** Bite e Tentacle individuais (sem exigência de alcance), Grappled/Poisoned, fuga com desvantagem Poisoned, ataque e destruição/regeneração de tentáculos, limpeza de vínculos em KO, preflight puro de Reel/Multiattack, Action Reel individual executável **sem deslocamento** quando há Grappled válido e Multiattack do Roper (2 Tentacle → Reel → 2 Bite) executável **em uma Action**, agora incluindo vários vínculos Grappled independentes por alvo. Condições não acumulam; fuga bem-sucedida (uma Action com desvantagem Poisoned) libera todos; destruição de apenas um tentáculo preserva os demais; KO encerra todos. Os testes exercitam rollback, idempotência, checkpoint e privacidade. Todos exigem fontes verificadas e não são combate SRD integral.
 
 **DECISÃO JÁ VIGENTE DESDE 15/10/2026, RATIFICADA EM 19/10/2026:** nenhum combate usa posição, arena, distância ou checagem de alcance espacial. Ver contrato `docs/poc/01_Regras/CONTRATO_DE_REGRAS.md` e [Issue #19 encerrada](https://github.com/george-vepo/Ascend-Card-Game/issues/19). A ausência de arena jamais bloqueia uma ação. O [PR #21](https://github.com/george-vepo/Ascend-Card-Game/pull/21) removeu as verificações espaciais e habilitou Reel individual como Action sem deslocamento, com cinco workflows verdes e merge confirmado na `main`.
 
-**PENDENTE:** Multiattack integral quando dois tentáculos agarram simultaneamente o mesmo alvo; a semântica da fuga/encerramento de vínculos depende da [issue #24](https://github.com/george-vepo/Ascend-Card-Game/issues/24). Spider Climb e demais componentes SRD ainda não suportados. O deslocamento posicional/vôo/arena **não será implementado**; efeitos não espaciais dessas habilidades exigem ficha e contrato verificáveis.
+**RESOLVIDO:** [Issue #24](https://github.com/george-vepo/Ascend-Card-Game/issues/24) encerrada após aprovação expressa, testes e merge do PR #26. A regra de uma única fuga liberando todos os tentáculos do Roper é **homebrew do Card Game**, não texto literal do SRD. **AINDA FORA DO RECORTE:** Spider Climb, Flyby da Owl, recursos e demais componentes SRD não implementados. Deslocamento posicional/vôo/arena **não será implementado**; verificar separadamente se uma habilidade tem efeitos não espaciais traduzíveis sem inventar regras.
 
-**Próximo incremento seguro:** aguardar decisão expressa da issue #24 antes de homologar **dois Grappled simultâneos**; em paralelo, fortalecer os cenários independentes (crítico, KO, resistências, idempotência, integridade/checkpoint) sem inventar semântica de fuga nem geometria. O Multiattack atômico **parcial** já foi integrado pelo PR #23, e a checagem espacial foi removida no PR #21; não recriar.
+**Próximo incremento seguro:** avaliar os próximos componentes SRD não espaciais da ficha Roper/Giant Owl contra o Catálogo SRD pinado e contrato vigente; implementar em PRs pequenos apenas o que tiver fonte e tradução operacional inequívoca, com CI. Não reabrir arena ou fuga múltipla sem nova deliberação. O motor continua experimental, **não equivale a combate SRD integral**.
 
 **Partida oficial:** não iniciada. **Placar oficial:** J1 0 × 0 J2. **Rolagens em CI:** simuladas, externas e explícitas. Não publicar mãos, decks privados, ordem de montes nem snapshots de estado competitivo real.
 
