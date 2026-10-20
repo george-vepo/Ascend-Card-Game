@@ -155,11 +155,13 @@ class FilaBackground:
                   claim["token"], claim["worker_id"], claim["fencing"], now))
             return cursor.rowcount == 1
 
-    def confirmar(self, claim: dict, status: str, resumo_publico: dict,
+    def confirmar(self, claim: dict, status: str, resumo_publico: dict | None,
                   *, agora: float | None = None) -> None:
         if status not in ESTADOS_RETORNO_WORKER:
             raise ErroFila("estado não permitido para confirmação do worker")
-        summary = _verificar_publico(resumo_publico)
+        if resumo_publico is None and status != "FALHOU":
+            raise ErroFila("resumo obrigatório fora de falha")
+        summary = _verificar_publico(resumo_publico) if resumo_publico is not None else None
         now = time.time() if agora is None else agora
         with self._connect() as db:
             cur = db.execute("""
@@ -169,7 +171,8 @@ class FilaBackground:
                 WHERE id=? AND status='EXECUTANDO'
                   AND token_lease=? AND worker_id=? AND versao_lease=?
                   AND lease_ate>?
-            """, (status, json.dumps(summary, sort_keys=True, ensure_ascii=False),
+            """, (status, json.dumps(summary, sort_keys=True, ensure_ascii=False)
+                  if summary is not None else None,
                   now, claim["job_id"], claim["token"], claim["worker_id"],
                   claim["fencing"], now))
             if cur.rowcount != 1:
@@ -250,11 +253,7 @@ def executar_tick_worker(fila: FilaBackground, worker_id: str,
     except Exception:
         # Nunca grava traceback ou dados privados numa linha pública do banco.
         try:
-            fila.confirmar(claim, "FALHOU", {
-                "passos_aceitos": 0, "fase": "ERRO_WORKER",
-                "ator_da_vez": None, "versao_estado": "E000",
-                "placar_fixture": {"J1": 0, "J2": 0},
-            }, agora=agora)
+            fila.confirmar(claim, "FALHOU", None, agora=agora)
         except ErroFila:
             pass  # lease perdido: outro worker é autoridade
         raise
