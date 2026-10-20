@@ -82,16 +82,12 @@ def extrair_habilidades_gibbering_mouther(ficha: FichaConsultada) -> dict:
     recharge_lo, recharge_hi, spell_dc, radius, range_ft, damage_avg, dmg_n, dmg_faces = (
         map(int, spittle.groups())
     )
-    if not (1 <= gib_dc <= 35 and 1 <= gib_reach <= 1000
-            and (n_dice, faces) == (1, 8)
-            and -30 <= b_bonus <= 30 and 1 <= b_reach <= 1000
-            and 1 <= b_n <= 20 and 2 <= b_faces <= 100
-            and b_mean == (b_n * (b_faces + 1)) // 2
-            and (recharge_lo, recharge_hi) == (5, 6)
-            and 1 <= spell_dc <= 35 and 1 <= radius <= 1000
-            and 1 <= range_ft <= 1000 and 1 <= dmg_n <= 20
-            and 2 <= dmg_faces <= 100
-            and damage_avg == (dmg_n * (dmg_faces + 1)) // 2):
+    # Os valores são lidos acima do texto SRD, mas sua identidade canônica
+    # é fixada nesta integração: mudanças exigem revisão, nunca fallback.
+    if not ((gib_dc, gib_reach, n_dice, faces) == (10, 20, 1, 8)
+            and (b_bonus, b_reach, b_mean, b_n, b_faces) == (2, 5, 7, 2, 6)
+            and (recharge_lo, recharge_hi, spell_dc, radius, range_ft,
+                 damage_avg, dmg_n, dmg_faces) == (5, 6, 10, 10, 30, 7, 2, 6)):
         raise FichaConflitante("números incompatíveis com o texto SRD verificado")
     return {
         "carta_id": ficha.id_copia,
