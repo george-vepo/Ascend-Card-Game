@@ -1,0 +1,25 @@
+name: Simulação IA — fila durável e worker
+on:
+  pull_request:
+    paths:
+      - "src/ascend/fila_simulacao_background.py"
+      - "tests/integration/test_fila_simulacao_background.py"
+      - ".github/workflows/validate-fila-simulacao-background.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fila-background:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Validar fila SQLite e exclusão mútua de workers
+        env:
+          PYTHONPATH: src
+        run: |
+          python -m unittest discover -s tests/integration -p test_fila_simulacao_background.py -v
