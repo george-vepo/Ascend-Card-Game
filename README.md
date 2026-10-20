@@ -13,6 +13,7 @@ Este projeto mantém as regras aprovadas do duelo, o estado/fluxo de partida, o 
 - [Plano de testes](docs/poc/05_Testes/PLANO_TESTES.md) e [84 cenários estruturais](docs/poc/05_Testes/CASOS_TESTE.json).
 - [Política de separação](docs/MIGRACAO.md).
 - [Formulário web experimental — resultado de combate externo e PV](docs/INTERFACE_RESULTADO_COMBATE_EXTERNO.md) (servidor local, somente fixture não oficial).
+- [GitHub Pages — interface estática com registro local de vencedor e PV](docs/GITHUB_PAGES_RESULTADO_COMBATE.md) (sem backend nem partida oficial).
 
 ## Estado
 
