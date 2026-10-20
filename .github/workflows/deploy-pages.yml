@@ -1,0 +1,70 @@
+name: Publicar Ascend Card Game no GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "web/pages/**"
+      - "web/resultado-combate/styles.css"
+      - "tests/web/pages-core.test.cjs"
+      - ".github/workflows/deploy-pages.yml"
+  pull_request:
+    paths:
+      - "web/pages/**"
+      - "web/resultado-combate/styles.css"
+      - "tests/web/pages-core.test.cjs"
+      - ".github/workflows/deploy-pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "ascend-card-game-pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Testar registro manual local (sem inventar cartas)
+        run: node --test tests/web/pages-core.test.cjs
+      - name: Montar site estático sem dependência da API Python
+        run: |
+          mkdir -p dist
+          cp web/pages/index.html dist/index.html
+          cp web/pages/core.js dist/core.js
+          cp web/pages/pages.js dist/pages.js
+          cp web/pages/pages.css dist/pages.css
+          cp web/resultado-combate/styles.css dist/styles.css
+          touch dist/.nojekyll
+          test -s dist/index.html
+          test -s dist/core.js
+          if grep -rE '["'"'"']/api/(combate|resultado)' dist; then
+            echo "Site Pages nao pode depender do backend Python"
+            exit 1
+          fi
+      - name: Publicar artefato estático no Pages
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    steps:
+      - name: Implantar site em GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
