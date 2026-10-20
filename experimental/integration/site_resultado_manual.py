@@ -19,7 +19,7 @@ for rel in ("src", "experimental/legacy/src", "experimental/integration"):
     if path not in sys.path:
         sys.path.insert(0, path)
 
-from motor_poc import digest
+from motor_poc import digest, InvalidAction
 from motor_roper_basico import SessaoRoperFixture
 from resultado_combate_externo import (
     COMANDO_RESULTADO_EXTERNO, ORIGEM_EXTERNA,
@@ -126,7 +126,7 @@ def criar_servidor(sessao: SessaoRoperFixture, *,
                     result = sessao.comando(
                         event_id, "ARBITRO", COMANDO_RESULTADO_EXTERNO, params
                     )
-                except ValueError:
+                except (InvalidAction, ValueError):
                     return self._send_json(
                         409, {"decisao": "REJEITADA", "motivo": "colisão de evento"})
                 if result["decisao"] != "ACEITA":
