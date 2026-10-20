@@ -127,6 +127,22 @@ class JobSimulacao:
                         proposta: dict | None, rolagens: dict | None) -> dict:
         """Avança no máximo UM evento; se exigir pessoa/dados, suspende sem mutar."""
         if self.estado in FINAL:
+            # Após KO ou erro fatal, replay de evento ACEITO também precisa
+            # ser estritamente idempotente: não avançar o placar outra vez.
+            if (isinstance(declaracao, dict)
+                    and isinstance(proposta, dict)
+                    and isinstance(rolagens, dict)):
+                eid = declaracao.get("evento_id")
+                if eid in self._fingerprints:
+                    replay = digest({
+                        "decl": declaracao, "proposta": proposta,
+                        "rolagens": rolagens,
+                    })
+                    if self._fingerprints[eid] == replay:
+                        return copy.deepcopy(self._respostas[eid])
+                    out = self.status_publico()
+                    out["erro"] = "colisão de evento/idempotência"
+                    return out
             return self.status_publico()
         if self.sessao.motor.state["fase"] != "COMBATE":
             self.estado = "CONCLUIDO"
