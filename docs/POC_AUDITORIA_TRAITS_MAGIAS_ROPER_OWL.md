@@ -1,5 +1,7 @@
 # Auditoria de Traits espaciais e Spellcasting — Roper × Giant Owl
 
+**NOTA DE CONTINUIDADE (19/10/2026):** este documento registra o estado histórico da **pré-validação do PR #28**. A [issue #30](https://github.com/george-vepo/Ascend-Card-Game/issues/30) foi posteriormente **resolvida** pelo [PR #31](https://github.com/george-vepo/Ascend-Card-Game/pull/31): `Detect Evil and Good` e `Detect Magic` agora são Actions executáveis **exclusivamente sobre o campo público**, com concentração SRD e salvaguardas sob dano; `Clairvoyance` permanece inaplicável, sem gasto do 1/Day. A regra normativa atual é `docs/poc/00_Governanca/DECISAO_20261019_MAGIAS_GIANT_OWL_SEM_POSICAO.md`. As afirmações abaixo sobre não executabilidade descrevem **somente o estágio anterior** à decisão.
+
 ## Fontes e escopo
 
 Consulta individual das fichas **SRD 5.2.1** do Catálogo SRD externo fixado em `config/catalogo_srd.json`, revisão `03f84e8426f469ef6a0e471faea2093b7c0b69c9`. Fontes originais: Roper, p. 320; Giant Owl, p. 352. Regras do Card Game de 15/10/2026 ratificadas em 19/10/2026: **nenhuma ação depende de posição, movimentação ou alcance espacial**. Sem transmutar comportamentos da ficha em novas regras por suposição.
