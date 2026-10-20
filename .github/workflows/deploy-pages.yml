@@ -44,7 +44,7 @@ jobs:
           touch dist/.nojekyll
           test -s dist/index.html
           test -s dist/core.js
-          if grep -rE '["'"'"']/api/(combate|resultado)' dist; then
+          if grep -rE '/api/(combate|resultado)' dist; then
             echo "Site Pages nao pode depender do backend Python"
             exit 1
           fi
