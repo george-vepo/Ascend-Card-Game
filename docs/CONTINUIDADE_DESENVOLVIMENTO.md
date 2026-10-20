@@ -1,6 +1,6 @@
 # Ascend Card Game — checkpoint verificável de desenvolvimento
 
-**Atualizado:** 2026-10-19. **Base de código:** `main` após o PR #31; commit `2a547c07ce5045831a5cb2ec9bdfed73f64ecb2c`.
+**Atualizado:** 2026-10-19. **Base de código:** `main` após o PR #33; commit `885b1aa1029dacdca2ba06f9fc895d7cdbdb4b0f`.
 
 ## Fonte da verdade e arquitetura
 
@@ -26,8 +26,9 @@
 | [PR #26](https://github.com/george-vepo/Ascend-Card-Game/pull/26) | **Homebrew aprovado:** múltiplos tentáculos por alvo, fuga única libera todos, destruição isolada conserva demais, Reel alvo único, KO limpa tudo e Multiattack completo na Action | `74422eb458457380477deb1e3036598b06934e26` | [170 testes aprovados](https://github.com/george-vepo/Ascend-Card-Game/actions/runs/39353711185) e [81 de regressão](https://github.com/george-vepo/Ascend-Card-Game/actions/runs/39353711192), cinco workflows verdes |
 | [PR #28](https://github.com/george-vepo/Ascend-Card-Game/pull/28) | Inventário SRD de Spider Climb/Flyby como traits exclusivamente espaciais (sem efeito na POC); Spellcasting da Owl (At Will Detect Evil and Good / Detect Magic; Clairvoyance 1/Day) auditada sem conjuração; limitações obsoletas do perfil corrigidas | `213684db8a9faaa5c9514f2b8837aae377804693` | [186 testes aprovados](https://github.com/george-vepo/Ascend-Card-Game/actions/runs/39354689642) e [81 regressões](https://github.com/george-vepo/Ascend-Card-Game/actions/runs/39354689537), cinco workflows verdes |
 | [PR #31](https://github.com/george-vepo/Ascend-Card-Game/pull/31) | **Decisão delegada #30:** Detect Evil and Good e Detect Magic como Actions de detecção só do campo público, concentração 100 rodadas e salvaguarda Constituição sob dano; Clairvoyance sem locais/10 minutos é inaplicável e não consome 1/Day | `2a547c07ce5045831a5cb2ec9bdfed73f64ecb2c` | [210 testes aprovados](https://github.com/george-vepo/Ascend-Card-Game/actions/runs/39356307864) e [81 regressões](https://github.com/george-vepo/Ascend-Card-Game/actions/runs/39356307710), cinco workflows verdes |
+| [PR #33](https://github.com/george-vepo/Ascend-Card-Game/pull/33) | Próxima criatura: **Gibbering Mouther** com ficha SRD p. 288 estritamente verificada, inventário de Gibbering/Wis DC10+d8, Blinding Spittle Dex DC10/Recharge 5–6/Blinded, Bite e Aberrant Ground; preflight público puro sem executar efeitos não regulamentados | `885b1aa1029dacdca2ba06f9fc895d7cdbdb4b0f` | [16 testes aprovados](https://github.com/george-vepo/Ascend-Card-Game/actions/runs/39357381590) no workflow Mouther; estrutura, ponte e referências do Catálogo SRD também aprovadas |
 
-**Contagens dos workflows:** os 81 testes da suíte de fuga/destruição são repetidos parcialmente no workflow principal. Não somar esses totais como testes independentes. Cinco workflows do PR #31 foram aprovados: Roper, fuga/destruição, estrutura, ponte e referências do Catálogo SRD.
+**Contagens dos workflows:** os 81 testes da suíte de fuga/destruição são repetidos parcialmente no workflow principal. Não somar esses totais como testes independentes. Quatro workflows do PR #33 foram aprovados (Mouther SRD, estrutura, ponte e referências do Catálogo). Os cinco workflows do PR #31 também estão documentados no histórico: Roper, fuga/destruição, estrutura, ponte e referências do Catálogo SRD.
 
 ## Arquivos e módulos atuais relevantes
 
@@ -44,6 +45,10 @@
 - `src/ascend/magias_owl_poc.py`: classificação de tipos públicos, efeitos mágicos públicos e salvaguarda de Constituição extraída da ficha SRD.
 - `tests/integration/test_owl_spellcasting_publico_real.py`: 24 testes novos de detecção, concentração, rollback, privacidade e checkpoint.
 - `docs/poc/00_Governanca/DECISAO_20261019_MAGIAS_GIANT_OWL_SEM_POSICAO.md`: decisão **homebrew** delegada #30 e regras da POC de detecção.
+- `src/ascend/gibbering_mouther_srd.py`: extrator estrito dos efeitos e recursos SRD da ficha Gibbering Mouther `AT-001 / AB-POC-008`.
+- `experimental/integration/preflight_gibbering_mouther.py`: verifica identidade, hash, CA/PV de criatura já em campo sem alterar zona/turno/eventos.
+- `tests/integration/test_gibbering_mouther_preflight_real.py`: 16 testes novos de fonte, privacidade e checkpoint, integrados pelo PR #33.
+- `docs/POC_GIBBERING_MOUTHER_PREVALIDACAO.md`: lacunas e estado consultivo da próxima criatura.
 - `docs/poc/00_Governanca/DECISAO_20261019_GRAPPLE_MULTIPLO_ROPER.md`: homebrew aprovado, distinto do SRD.
 - `docs/ROPER_MULTIATTACK_ATOMICO_PARCIAL.md`: limite de escopo, dados simulados, Action única e rollback.
 - `.github/workflows/validate-roper-basico.yml`: regressão de todos os componentes do Roper.
@@ -57,7 +62,7 @@
 
 **RESOLVIDO:** [Issue #24](https://github.com/george-vepo/Ascend-Card-Game/issues/24) encerrada após aprovação expressa, testes e merge do PR #26. A regra de uma única fuga liberando todos os tentáculos do Roper é **homebrew do Card Game**, não texto literal do SRD. **CLASSIFICADOS SEM EFEITO ESPACIAL:** Spider Climb do Roper e Flyby da Owl são Traits auditadas, mas movimento e alcance não existem no Card Game. **ISSUE #30 RESOLVIDA:** [decision](https://github.com/george-vepo/Ascend-Card-Game/issues/30) e PR #31 integrados. Detect Evil and Good/Detect Magic executáveis como **Actions** da Owl, com leitura estrita de informações públicas do campo, concentração de no máximo 100 rodadas, salvaguarda de Constituição verificada, substituição/encerramento e rollback transacional no dano; **Clairvoyance inaplicável** com 1/Day preservado (não consumido). A substituição do domínio físico pelo campo público é **homebrew aprovada**, não texto do SRD. **AINDA FORA DO RECORTE:** inspeção de escola/aura com segunda Magic Action em efeitos concretos, magias de outras criaturas e demais componentes SRD. Deslocamento posicional/vôo/arena **não será implementado**; verificar separadamente se uma habilidade tem efeitos não espaciais traduzíveis sem inventar regras.
 
-**Próximo incremento seguro:** identificar próximo componente de combate ainda não integrado e verificável nas fichas de criaturas já presentes ou ampliar o conjunto de criaturas somente com proveniência do Catálogo SRD. Manter efeitos espaciais fora, respeitar privacidade e não inventar magias, recursos ou regras. As detecções da Owl **já estão implementadas** na fixture; a inspeção posterior de aura/escola exige efeito mágico público com escola comprovada. O motor continua experimental, **não equivale a combate SRD integral**.
+**Próximo incremento seguro:** desenvolver a **ação Bite do Gibbering Mouther contra a Giant Owl Large** em fixture experimental, verificando a ficha e o porte do alvo: Prone da ficha só se aplica a Medium ou menor, logo não é ativado neste confronto; resolver d20/dano explícitos, KO conforme regra superior de zona cemitério, turnos e checkpoints. Não executar ainda Gibbering (d8 de movimento/ataque aleatório) ou Blinding Spittle (área sem arena) sem tradução aprovada dos gatilhos e alvos. A auditoria de magias da Owl (#31) já está integrada e não deve ser refeita. O motor continua experimental, **não equivale a combate SRD integral**.
 
 **Partida oficial:** não iniciada. **Placar oficial:** J1 0 × 0 J2. **Rolagens em CI:** simuladas, externas e explícitas. Não publicar mãos, decks privados, ordem de montes nem snapshots de estado competitivo real.
 
