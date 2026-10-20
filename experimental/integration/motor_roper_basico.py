@@ -28,6 +28,9 @@ from ascend.testes_d20_srd import (
 )
 from motor_poc import MotorPOC, InvalidAction, UnresolvedRule, SIDES, other
 from motor_fichas_poc import MotorFichasPOC, SessaoFichasFixture
+from resultado_combate_externo import (
+    aplicar_resultado_externo, COMANDO_RESULTADO_EXTERNO,
+)
 
 ESCOPO_BASICO = "ATAQUE_INDIVIDUAL_SEM_MULTIATAQUE_OU_PASSIVOS"
 ESCOPO_MULTIATTACK = "MULTIATTACK_ATOMICO_GRAPPLE_MULTIPLO_APROVADO"
@@ -600,6 +603,8 @@ class MotorRoperBasico(MotorFichasPOC):
         return resultado
 
     def _transition(self, s, actor, command, params):
+        if command == COMANDO_RESULTADO_EXTERNO:
+            return aplicar_resultado_externo(self, s, actor, params)
         if command == "CONJURAR_MAGIA_OWL_TESTE":
             if actor != "J1":
                 raise InvalidAction("Spellcasting pertence à Giant Owl do J1")
@@ -1003,6 +1008,9 @@ class MotorRoperBasico(MotorFichasPOC):
                  "limite_rodadas": conc["duracao_rodadas"]}
                 if conc else None
             )
+        ultimo = self.state["combate"].get("ultimo_resultado_manual_publico")
+        if ultimo is not None:
+            out["ultimo_resultado_externo"] = copy.deepcopy(ultimo)
         return out
 
 

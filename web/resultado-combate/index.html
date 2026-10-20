@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SRD Card Game · Registro de resultado</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <div class="brand"><div class="brand-icon" aria-hidden="true">⚔</div><div><p class="eyebrow">SRD CARD GAME</p><h1>Resultado do combate</h1></div></div>
+      <span class="environment">DEMONSTRAÇÃO · NÃO OFICIAL</span>
+    </header>
+    <main>
+      <section class="intro" aria-labelledby="headline">
+        <p class="section-kicker">COMBATE EXTERNO · CHATGPT</p>
+        <h2 id="headline">A batalha terminou?</h2>
+        <p>A IA pode simular a luta fora do site. Depois, registre o <strong>vencedor</strong> e os <strong>PV restantes</strong> para atualizar o campo, o cemitério e o placar — sem repetir os ataques.</p>
+        <div class="notice"><span aria-hidden="true">ⓘ</span><span>O site registra o resultado declarado por você; <strong>não verifica</strong> automaticamente o histórico, os dados nem eventuais curas da simulação externa.</span></div>
+      </section>
+
+      <section class="board" aria-label="Estado público atual">
+        <div class="board-heading"><div><p class="section-kicker">MESA PÚBLICA</p><h2>Combate <span id="combat-number">—</span></h2></div><div class="board-meta"><span id="phase">Carregando…</span><button id="reload" class="text-button" type="button">Atualizar</button></div></div>
+        <div class="score" aria-label="Placar">
+          <div><span class="side-name">JOGADOR 1</span><strong id="score-j1">0</strong></div>
+          <div class="score-divider">×</div>
+          <div><span class="side-name">JOGADOR 2</span><strong id="score-j2">0</strong></div>
+        </div>
+        <div class="fighters">
+          <article class="fighter" id="card-j1"><div class="fighter-label">J1 · CAMPO</div><h3 id="name-j1">Aguardando…</h3><p id="id-j1" class="identifier">—</p><div class="stats"><span>Classe de Armadura <b id="ac-j1">—</b></span><span>Pontos de Vida <b id="hp-j1">—</b></span></div><p id="conditions-j1" class="conditions">Sem condições</p></article>
+          <div class="vs" aria-hidden="true">VS</div>
+          <article class="fighter" id="card-j2"><div class="fighter-label">J2 · CAMPO</div><h3 id="name-j2">Aguardando…</h3><p id="id-j2" class="identifier">—</p><div class="stats"><span>Classe de Armadura <b id="ac-j2">—</b></span><span>Pontos de Vida <b id="hp-j2">—</b></span></div><p id="conditions-j2" class="conditions">Sem condições</p></article>
+        </div>
+      </section>
+
+      <section class="entry" aria-labelledby="entry-title">
+        <div class="board-heading"><div><p class="section-kicker">RESULTADO DA SIMULAÇÃO</p><h2 id="entry-title">Registrar desfecho</h2></div><span class="step-label">Uma vez por combate</span></div>
+        <form id="result-form" novalidate>
+          <fieldset id="winners"><legend>Quem venceu?</legend><div class="winner-options"><label class="winner-option" for="winner-j1"><input type="radio" id="winner-j1" name="winner" value="J1" required><span><small>JOGADOR 1</small><strong id="winner-name-j1">—</strong></span><span class="tick" aria-hidden="true">✓</span></label><label class="winner-option" for="winner-j2"><input type="radio" id="winner-j2" name="winner" value="J2"><span><small>JOGADOR 2</small><strong id="winner-name-j2">—</strong></span><span class="tick" aria-hidden="true">✓</span></label></div></fieldset>
+          <div class="hp-row"><label for="remaining-hp"><span>PV restantes do vencedor</span><small id="pv-rule">Escolha o vencedor para ver o limite.</small></label><div class="number-control"><input type="number" id="remaining-hp" name="remainingHp" min="1" step="1" inputmode="numeric" placeholder="Ex.: 12" required><span id="max-hp">/ — PV máx.</span></div></div>
+          <div class="preview"><span aria-hidden="true">➜</span><p><strong>Ao confirmar:</strong> o derrotado ficará com 0 PV e irá para o cemitério; o vencedor continuará no campo com os PV informados e receberá <strong>+1 ponto</strong>. Não haverá compra de cartas nem cura automática.</p></div>
+          <label class="confirmation"><input id="confirm" type="checkbox" required><span>Confirmo que este é o resultado da batalha simulada fora do site e que quero registrá-lo nesta partida de demonstração.</span></label>
+          <div class="actions"><button type="submit" id="submit-result" class="primary">Confirmar resultado <span aria-hidden="true">↗</span></button><span id="current-version" class="version">—</span></div>
+        </form>
+        <div id="feedback" class="feedback" aria-live="polite" role="status"></div>
+      </section>
+
+      <section class="after" aria-label="Resultado registrado" id="after" hidden>
+        <div class="after-icon" aria-hidden="true">✓</div><div><p class="section-kicker">EVENTO REGISTRADO</p><h2 id="after-title">Combate encerrado</h2><p id="after-details"></p><p class="muted">O resultado foi declarado manualmente, sem homologação automática da simulação externa.</p></div>
+      </section>
+    </main>
+    <footer>SRD Card Game · Interface experimental local · Nenhuma partida oficial iniciada</footer>
+  </div>
+</body>
+</html>

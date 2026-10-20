@@ -12,6 +12,7 @@ Este projeto mantém as regras aprovadas do duelo, o estado/fluxo de partida, o 
 - [Fluxo de telas](docs/poc/02_Interface/FLUXO_DE_TELAS.md) e [estado de jogo](docs/poc/04_Estado/SCHEMA_ESTADO_POC.json).
 - [Plano de testes](docs/poc/05_Testes/PLANO_TESTES.md) e [84 cenários estruturais](docs/poc/05_Testes/CASOS_TESTE.json).
 - [Política de separação](docs/MIGRACAO.md).
+- [Formulário web experimental — resultado de combate externo e PV](docs/INTERFACE_RESULTADO_COMBATE_EXTERNO.md) (servidor local, somente fixture não oficial).
 
 ## Estado
 
