@@ -1,0 +1,17 @@
+.board-bottom{display:flex;justify-content:space-between;gap:10px;margin-top:18px;color:var(--muted);font-size:12px;flex-wrap:wrap}
+.setup-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:22px}
+.setup-player{border:1px solid var(--stroke);border-radius:12px;padding:18px;background:var(--surface-2);margin:0}
+.setup-player legend{padding:0 8px;color:var(--gold);font-size:13px;font-weight:800}
+.setup-player label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:700;margin-bottom:12px}
+.setup-player input{width:100%;border:1px solid #52636e;background:#0d1b24;color:#f0f3f1;padding:10px;border-radius:8px;font-size:14px;font-family:inherit}
+.setup-player input:focus{outline:2px solid var(--gold);outline-offset:1px}
+.setup-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.setup-player input.locked{opacity:.72;background:#1e3138;cursor:not-allowed}
+.survivor-note{font-size:12px;color:var(--positive);margin:6px 0 0}
+.history-row{padding:9px 0;border-bottom:1px solid var(--stroke);font-size:13px;margin:0}
+.history-row:last-child{border-bottom:0}
+.feedback:not(:empty){padding:12px 15px;border-radius:10px;font-size:13px;margin:0}
+.feedback.error{color:#ffc1bc;background:#382022;border:1px solid #6c3336}
+.feedback.success{color:#c4ead3;background:#183526;border:1px solid #326346}
+[hidden]{display:none!important}
+@media(max-width:700px){.setup-grid{grid-template-columns:1fr}.setup-stats{grid-template-columns:1fr 1fr}.board-bottom{flex-direction:column}}
