@@ -191,14 +191,14 @@ class ResultadoExternoWeb(unittest.TestCase):
         data["hash_estado_base"] = "0" * 64
         before = self.state_copy()
         status, out = self.post(data)
-        self.assertEqual(status, 422, out)
+        self.assertEqual(status, 409, out)
         self.assertEqual(self.s.motor.state, before)
 
     def test_15_numero_combate_diferente_bloqueia(self):
         data = self.payload()
         data["combate_numero"] += 1
         status, out = self.post(data)
-        self.assertEqual(status, 422, out)
+        self.assertEqual(status, 409, out)
 
     def test_16_mesmo_evento_mesmo_payload_e_idempotente(self):
         req = self.payload()
