@@ -46,12 +46,20 @@ jobs:
           cp web/pages/decks-core.js dist/decks-core.js
           cp web/pages/decks.js dist/decks.js
           cp web/pages/decks.css dist/decks.css
+          cp web/pages/zones-core.js dist/zones-core.js
+          cp web/pages/draw-exchange-fixtures.js dist/draw-exchange-fixtures.js
+          cp web/pages/creature-preparation-fixtures.js dist/creature-preparation-fixtures.js
+          cp web/pages/fixture-lab.js dist/fixture-lab.js
+          cp web/pages/fixture-lab.html dist/fixture-lab.html
+          cp web/pages/fixture-lab.css dist/fixture-lab.css
           cp web/resultado-combate/styles.css dist/styles.css
           touch dist/.nojekyll
           test -s dist/index.html
           test -s dist/core.js
           test -s dist/decks.html
           test -s dist/decks-core.js
+          test -s dist/fixture-lab.html
+          test -s dist/fixture-lab.js
           if grep -rE '/api/(combate|resultado)' dist; then
             echo "Site Pages nao pode depender do backend Python"
             exit 1
