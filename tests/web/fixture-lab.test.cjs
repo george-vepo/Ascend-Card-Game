@@ -105,6 +105,17 @@ test('o roteiro para antes de suporte, batalha e pontuação', () => {
   zones.check(s);
 });
 
+test('rejeita carta externa mesmo com inventário e zonas coerentes', () => {
+  const s = lab.start();
+  const modified = JSON.parse(JSON.stringify(s));
+  modified.inventario.J1[0].catalogoId = 'AT-002';
+  modified.jogadores.J1.monte[0].catalogoId = 'AT-002';
+  zones.check(modified);
+  assert.throws(() => lab.publicView(modified), /marcadores fictícios fixos/);
+  assert.throws(() => lab.step(modified,modified.versao), /marcadores fictícios fixos/);
+  assert.equal(s.inventario.J1[0].catalogoId, 'FICTICIO-0');
+});
+
 test('versão antiga não modifica estado sintético', () => {
   const s=lab.start(), old=JSON.stringify(s);
   assert.throws(()=>lab.step(s,s.versao-1),/Versão obsoleta/);
