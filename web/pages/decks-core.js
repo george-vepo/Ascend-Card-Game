@@ -6,7 +6,7 @@
 })(typeof window !== 'undefined' ? window : null, function () {
   'use strict';
 
-  const SOURCE = 'https://george-vepo.github.io/Catalogo-SRD/catalogo/';
+  const SOURCE = 'https://george-vepo.github.io/Catalogo-SRD/docs/catalogo/';
   const DATA = SOURCE + 'data/';
   const SIDES = ['J1', 'J2'];
   const HEADERS = ['copia_id', 'catalogo_id'];
