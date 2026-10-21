@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import math
 import re
 from collections.abc import Mapping
 from typing import Any
@@ -47,7 +48,9 @@ def _cartao(carta: dict[str, Any], campos: tuple[str, ...]) -> dict[str, Any]:
     if not isinstance(resultado["raridade"], str) or not resultado["raridade"].strip():
         _falhar_estado()
     nd = resultado["nd"]
-    if type(nd) not in (str, int, float) or (isinstance(nd, str) and not nd.strip()):
+    if type(nd) not in (str, int, float) or (isinstance(nd, str) and not nd.strip()) or (
+        type(nd) is float and not math.isfinite(nd)
+    ):
         _falhar_estado()
     ca, pv = resultado["ca"], resultado["pvMax"]
     if ca is not None and (type(ca) is not int or ca < 0):
@@ -62,7 +65,7 @@ def _projecoes(estado: dict[str, Any], versao: int, papel: str) -> dict[str, Any
         _falhar_estado()
     fase, vez, placar = estado.get("fase"), estado.get("vez"), estado.get("placar")
     jogadores = estado.get("jogadores")
-    if fase not in _FASES or vez not in ("J1", "J2", None):
+    if not isinstance(fase, str) or fase not in _FASES or vez not in ("J1", "J2", None):
         _falhar_estado()
     if not isinstance(placar, dict) or set(placar) != {"J1", "J2"}:
         _falhar_estado()
