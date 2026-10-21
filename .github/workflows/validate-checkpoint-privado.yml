@@ -4,6 +4,9 @@ on:
     paths:
       - "src/ascend/checkpoint_privado.py"
       - "tests/integration/test_checkpoint_privado.py"
+      - "tests/integration/test_porta_leitura_fixture.py"
+      - "src/ascend/porta_leitura_fixture.py"
+      - "docs/PORTA_LEITURA_SESSAO_FIXTURE.md"
       - "docs/CHECKPOINT_PRIVADO_EXPERIMENTAL.md"
       - ".github/workflows/validate-checkpoint-privado.yml"
   workflow_dispatch:
@@ -23,3 +26,7 @@ jobs:
         env:
           PYTHONPATH: src
         run: python -m unittest discover -s tests/integration -p test_checkpoint_privado.py -v
+      - name: Testar autorização e projeções de leitura de fixture
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests/integration -p test_porta_leitura_fixture.py -v
