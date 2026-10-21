@@ -172,6 +172,24 @@ class TestarPortaLeituraFixture(unittest.TestCase):
         self.assertNotIn("J2-FAKE-39", json.dumps(result))
         self.assertNotIn("SEGREDO_CANARIO", json.dumps(result))
 
+    def test_campos_malformados_nao_expoem_excecoes_internas(self):
+        originals = [
+            {"fase": {"nao": "valido"}},
+            {"fase": ["TROCA"]},
+        ]
+        version = 1
+        for fragment in originals:
+            state = fixture()
+            state.update(fragment)
+            version = self.db.salvar("sim01", state, versao_esperada=version)
+            with self.assertRaises(EstadoIndisponivel):
+                self.gateway.consultar("sim01", self.tokens["PUBLICO"])
+        state = fixture()
+        state["jogadores"]["J1"]["monte"][0]["nd"] = {"valor": "5"}
+        version = self.db.salvar("sim01", state, versao_esperada=version)
+        with self.assertRaises(EstadoIndisponivel):
+            self.gateway.consultar("sim01", self.tokens["PUBLICO"])
+
     def test_mutacao_da_visao_nao_modifica_checkpoint(self):
         result = self.gateway.consultar("sim01", self.tokens["J1"])
         result["mao_privada"]["cartas"].clear()
