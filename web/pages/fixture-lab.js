@@ -46,6 +46,17 @@
     zones.check(state);
     if (state.simulacao?.modo !== exchange.MODE || state.simulacao.primeiro !== 'J1')
       fail('Somente dados sintéticos locais são permitidos.');
+    // Bloqueia qualquer substituição por um deck externo, mesmo que o chamador
+    // construa inventário e zonas consistentes e copie o marcador de fixture.
+    for (const side of ['J1', 'J2']) {
+      const actual = state.inventario?.[side];
+      const expected = syntheticDeck(side);
+      if (!Array.isArray(actual) || actual.length !== expected.length ||
+          actual.some((card, i) => Object.keys(expected[i]).some(
+            field => card[field] !== expected[i][field]
+          )))
+        fail('Laboratório aceita somente os 80 marcadores fictícios fixos.');
+    }
     if (!Number.isSafeInteger(expectedVersion) || expectedVersion !== state.versao)
       fail('Versão obsoleta da demonstração.');
   }
