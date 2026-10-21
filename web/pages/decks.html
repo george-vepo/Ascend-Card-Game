@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ascend Card Game · Importar decks</title>
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./pages.css">
+  <link rel="stylesheet" href="./decks.css">
+  <script src="./decks-core.js" defer></script>
+  <script src="./decks.js" defer></script>
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <div class="brand"><div class="brand-icon" aria-hidden="true">⚔</div><div><p class="eyebrow">SRD CARD GAME</p><h1>Ascend Card Game</h1></div></div>
+    <span class="environment">CATÁLOGO EXTERNO · SOMENTE LEITURA</span>
+  </header>
+  <main>
+    <section class="intro">
+      <p class="section-kicker">PREPARAÇÃO · DECKS CSV</p>
+      <h2>Importar os dois decks</h2>
+      <p><a class="deck-back" href="./index.html">← Voltar à mesa de demonstração</a></p>
+      <div class="notice"><span aria-hidden="true">ⓘ</span><span><strong>Importação consultiva, não oficial.</strong> Esta tela valida 40 cópias, IDs únicos, identidade e raridade por ND a partir do <a href="https://george-vepo.github.io/Catalogo-SRD/" target="_blank" rel="noopener noreferrer">Catálogo SRD</a>. Não prova posse na coleção, não valida todas as habilidades e <strong>não cria partida</strong>. Os dois decks ficam visíveis a quem usa esta tela; não use para compartilhar mãos privadas. Dados dos CSVs não são enviados a servidores nem persistidos neste navegador.</span></div>
+      <p id="catalog-status" class="deck-status" role="status" aria-live="polite">Carregando índice, fichas e imagens do Catálogo SRD…</p>
+      <button id="retry-catalog" type="button" class="text-button" hidden>Tentar carregar o catálogo novamente</button>
+    </section>
+    <section class="entry" aria-labelledby="decks-heading">
+      <div class="board-heading"><div><p class="section-kicker">DUAS ENTRADAS INDEPENDENTES</p><h2 id="decks-heading">Decks dos jogadores</h2></div><span class="step-label">CSV UTF-8 · 40 cópias cada</span></div>
+      <p class="muted">Colunas obrigatórias: <code>copia_id;catalogo_id</code>. A coluna <code>nome</code> é opcional e, quando informada, precisa corresponder ao ID canônico. Aceita ponto e vírgula, vírgula, tabulação, BOM UTF-8 e aspas CSV. Não inclua atributos inventados no arquivo.</p>
+      <div class="deck-grid">
+        <article class="deck-player" aria-labelledby="deck-j1-title">
+          <h3 id="deck-j1-title">Jogador 1 · CSV</h3>
+          <label for="file-j1">Escolher arquivo do deck J1</label>
+          <input id="file-j1" type="file" accept=".csv,text/csv,text/plain" disabled>
+          <a id="template-j1" download="modelo-deck-J1.csv" href="#">Baixar modelo CSV J1 (40 posições)</a>
+          <p class="deck-message" id="message-j1" role="status" aria-live="polite">Aguardando catálogo.</p>
+          <p class="deck-count" id="count-j1">0 / 40 cópias validadas</p>
+          <details id="details-j1" hidden><summary>Ver as 40 cartas importadas</summary><div id="cards-j1" class="deck-cards"></div></details>
+        </article>
+        <article class="deck-player" aria-labelledby="deck-j2-title">
+          <h3 id="deck-j2-title">Jogador 2 / Inimigo · CSV</h3>
+          <label for="file-j2">Escolher arquivo do deck J2</label>
+          <input id="file-j2" type="file" accept=".csv,text/csv,text/plain" disabled>
+          <a id="template-j2" download="modelo-deck-J2.csv" href="#">Baixar modelo CSV J2 (40 posições)</a>
+          <p class="deck-message" id="message-j2" role="status" aria-live="polite">Aguardando catálogo.</p>
+          <p class="deck-count" id="count-j2">0 / 40 cópias validadas</p>
+          <details id="details-j2" hidden><summary>Ver as 40 cartas importadas</summary><div id="cards-j2" class="deck-cards"></div></details>
+        </article>
+      </div>
+    </section>
+    <section class="board" aria-labelledby="deck-summary-title">
+      <div class="board-heading"><div><p class="section-kicker">RESUMO DE IMPORTAÇÃO</p><h2 id="deck-summary-title">Verificações</h2></div></div>
+      <p id="deck-summary" aria-live="polite">Importe ambos os arquivos CSV para conferir as 80 cópias sem duplicidade.</p>
+      <p class="muted">Sem comprovante de coleção, o resultado é somente validação de estrutura e identidade. Fichas ou imagens ausentes permanecem pendentes, sem substituições automáticas.</p>
+    </section>
+  </main>
+  <footer>Ascend Card Game · Dados de leitura do Catálogo SRD · Nenhuma partida oficial ou mão privada armazenada</footer>
+</div>
+</body>
+</html>
