@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SRD Card Game · Laboratório sintético de zonas</title>
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./pages.css">
+  <link rel="stylesheet" href="./fixture-lab.css">
+  <script src="./decks-core.js" defer></script>
+  <script src="./zones-core.js" defer></script>
+  <script src="./draw-exchange-fixtures.js" defer></script>
+  <script src="./creature-preparation-fixtures.js" defer></script>
+  <script src="./fixture-lab.js" defer></script>
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <div class="brand"><div class="brand-icon" aria-hidden="true">⚔</div><div>
+        <p class="eyebrow">SRD CARD GAME</p><h1>Ascend Card Game</h1>
+      </div></div>
+      <span class="environment">LABORATÓRIO FICTÍCIO · SEM PARTIDA</span>
+    </header>
+    <main>
+      <section class="intro">
+        <p class="section-kicker">TESTE GUIADO DAS ETAPAS 1–3</p>
+        <h2>Da compra à evolução</h2>
+        <p><a class="lab-back" href="./index.html">← Voltar à demonstração principal</a></p>
+        <div class="notice"><span aria-hidden="true">ⓘ</span><span>
+          <strong>Não é um duelo nem um simulador de combate.</strong> Esta página usa somente 80
+          marcadores <strong>inteiramente fictícios</strong> para exercitar o motor de zonas,
+          compras, trocas, invocação e evolução. A sequência é fixa e serve apenas para testar
+          transições; não sorteia prioridade, não inicia partida, não usa decks ou fichas reais
+          e não altera nenhuma informação oficial. <strong>Não envie mãos ou decks privados
+          para esta página:</strong> código de navegador não oferece isolamento entre jogadores.
+        </span></div>
+      </section>
+
+      <section class="board" aria-labelledby="lab-title">
+        <div class="board-heading">
+          <div><p class="section-kicker">VISÃO PÚBLICA DA FIXTURE</p><h2 id="lab-title">Mesa de preparação</h2></div>
+          <span class="step-label" id="lab-version">—</span>
+        </div>
+        <div class="lab-phase"><span>Fase: <strong id="lab-phase">NÃO INICIADO</strong></span>
+          <span>Vez: <strong id="lab-turn">—</strong></span></div>
+        <div class="score" aria-label="Placar fictício, sempre zero">
+          <div><span class="side-name">JOGADOR 1</span><strong id="lab-score-j1">0</strong></div>
+          <div class="score-divider">×</div>
+          <div><span class="side-name">JOGADOR 2</span><strong id="lab-score-j2">0</strong></div>
+        </div>
+        <div class="fighters">
+          <article class="fighter">
+            <div class="fighter-label">J1 · CAMPO PÚBLICO</div>
+            <h3 id="lab-name-j1">Campo vazio</h3>
+            <p id="lab-id-j1" class="identifier">—</p>
+            <p id="lab-info-j1" class="lab-identity">Sem criatura invocada</p>
+            <p id="lab-stats-j1" class="lab-attributes">CA — · PV —</p>
+            <p id="lab-count-j1" class="lab-count">Monte — · Mão — · Cemitério —</p>
+          </article>
+          <div class="vs" aria-hidden="true">VS</div>
+          <article class="fighter">
+            <div class="fighter-label">J2 · CAMPO PÚBLICO</div>
+            <h3 id="lab-name-j2">Campo vazio</h3>
+            <p id="lab-id-j2" class="identifier">—</p>
+            <p id="lab-info-j2" class="lab-identity">Sem criatura invocada</p>
+            <p id="lab-stats-j2" class="lab-attributes">CA — · PV —</p>
+            <p id="lab-count-j2" class="lab-count">Monte — · Mão — · Cemitério —</p>
+          </article>
+        </div>
+        <p id="lab-summary" class="lab-summary">Nenhuma fixture iniciada. A execução ocorre somente nesta página.</p>
+      </section>
+
+      <section class="entry" aria-labelledby="lab-actions-title">
+        <div class="board-heading">
+          <div><p class="section-kicker">OPERAÇÕES SINTÉTICAS</p><h2 id="lab-actions-title">Execução passo a passo</h2></div>
+        </div>
+        <p class="muted">O roteiro usa uma troca de uma carta fictícia de J1, uma troca de zero cartas de J2 e evoluções consecutivas válidas. Somente as quantidades e as criaturas no campo são exibidas. A demonstração para antes dos suportes e do combate.</p>
+        <div class="lab-actions">
+          <button id="lab-next" class="primary" type="button">Iniciar laboratório sintético</button>
+          <button id="lab-reset" class="text-button" type="button">Reiniciar teste</button>
+        </div>
+        <p id="lab-feedback" class="lab-feedback" aria-live="polite" role="status"></p>
+      </section>
+    </main>
+    <footer>Ascend Card Game · Laboratório somente de fixtures fictícias · Sem persistência, autenticação ou partida oficial</footer>
+  </div>
+</body>
+</html>
