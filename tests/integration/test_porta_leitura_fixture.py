@@ -140,11 +140,12 @@ class TestarPortaLeituraFixture(unittest.TestCase):
                     PortaLeituraFixture(self.db, {"outro": token_map})
 
     def test_checkpoint_sem_fixture_ou_com_dados_incompletos_e_bloqueado(self):
+        version = 1
         for raw in ({"ambiente": "PARTIDA_REAL"}, {"ambiente": "FIXTURE_NAO_OFICIAL"}):
-            self.db.salvar("sim01", raw, versao_esperada=1)
+            version = self.db.salvar("sim01", raw, versao_esperada=version)
             with self.assertRaises(EstadoIndisponivel):
                 self.gateway.consultar("sim01", self.tokens["PUBLICO"])
-            self.db.salvar("sim01", self.original, versao_esperada=2)
+            version = self.db.salvar("sim01", self.original, versao_esperada=version)
 
     def test_rejeita_perda_e_duplicidade_de_copias(self):
         broken = fixture()
