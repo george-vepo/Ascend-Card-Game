@@ -1,0 +1,19 @@
+.deck-back{color:var(--gold);font-weight:700}
+.deck-status{padding:12px;border:1px solid var(--stroke);border-radius:10px}
+.deck-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0 0}
+.deck-player{border:1px solid var(--stroke);border-radius:12px;padding:18px;background:var(--surface-2);min-width:0}
+.deck-player h3{font-size:19px;margin:0 0 16px}
+.deck-player label{display:block;font-weight:700;margin:0 0 6px}
+.deck-player input[type=file]{display:block;width:100%;margin-bottom:15px;color:inherit}
+.deck-player a{color:var(--gold);font-size:13px}
+.deck-message{font-size:13px;min-height:2em;margin-top:15px}
+.deck-message.error{color:#ffc1bc}
+.deck-count{font-weight:800;font-size:15px}
+.deck-player details summary{cursor:pointer;color:var(--gold);padding:10px 0}
+.deck-cards{max-height:560px;overflow:auto;display:flex;flex-direction:column;gap:8px}
+.deck-card{border:1px solid var(--stroke);border-radius:8px;padding:10px;display:flex;align-items:start;gap:12px;overflow-wrap:anywhere}
+.deck-card img{width:70px;height:88px;object-fit:contain;border-radius:5px;background:#111c24;flex-shrink:0}
+.deck-card strong{font-size:14px;display:block}
+.deck-card p{font-size:12px;line-height:1.5;margin:6px 0}
+.deck-card a{font-size:12px}
+@media(max-width:750px){.deck-grid{grid-template-columns:1fr}}
