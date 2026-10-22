@@ -1,7 +1,8 @@
 /* UI local: sem estado de fixture e sem revelar a mão da IA no DOM. */
 'use strict';
 (() => {
-  const api = window.SRDLocalMatch, importer = window.SRDDeckImport;
+  const api = window.SRDLocalMatch, importer = window.SRDDeckImport,
+    presets = window.SRDLocalPresets;
   const $ = id => document.getElementById(id);
   const KEY = 'ascend.match.human-ai.v1';
   let catalog = null, state = null, invalidSave = false;
@@ -107,6 +108,7 @@
     }
     if (!view) history.textContent = 'Nenhuma ação.';
     $('local-start').disabled = !(catalog && csv.J1 && csv.J2 && !state && !invalidSave);
+    $('local-preset').disabled = !(catalog && !state && !invalidSave);
   }
   function persist(next) {
     api.check(next);
@@ -170,6 +172,18 @@
       render();
     });
   }
+  $('local-preset').addEventListener('click',()=>{
+    try {
+      const generated = presets.create(catalog);
+      csv.J1 = generated.J1;
+      csv.J2 = generated.J2;
+      $('local-deck-status').textContent =
+        'Decks virtuais locais prontos: 40 Cat (humano) e 40 Owl (IA). ' +
+        'Cópias válidas mas SEM comprovação de posse. A sessão NÃO foi iniciada.';
+      status('Seleção preparada. Clique em Iniciar sessão apenas se quiser jogar.');
+      render();
+    } catch(error) { status('Preset bloqueado: '+error.message);render(); }
+  });
   $('local-start').addEventListener('click',()=>{
     act(()=>api.start(catalog,csv.J1,csv.J2));
   });

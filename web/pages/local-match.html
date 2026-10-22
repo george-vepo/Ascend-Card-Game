@@ -11,6 +11,7 @@
   <script src="./zones-core.js" defer></script>
   <script src="./combat-srd-subset.js" defer></script>
   <script src="./local-match-core.js" defer></script>
+  <script src="./local-presets.js" defer></script>
   <script src="./local-match.js" defer></script>
 </head>
 <body>
@@ -30,6 +31,8 @@
     <section id="local-setup" class="entry">
       <div class="board-heading"><div><p class="section-kicker">PREPARAR DECKS</p><h2>Selecionar dois arquivos CSV</h2></div></div>
       <p class="muted">UTF-8; cabeçalho <code>copia_id;catalogo_id</code>, 40 linhas por deck. Nenhum embaralhamento acontece até clicar em Iniciar sessão.</p>
+      <p class="muted">Também é possível experimentar com dois decks virtuais locais: 40 cópias de Cat (J1) contra 40 cópias de Owl (IA). São criaturas canônicas do catálogo, mas as cópias não representam coleção possuída.</p>
+      <button id="local-preset" type="button" disabled>Preparar decks virtuais Cat × Owl</button>
       <div class="local-files">
         <label>Deck humano · J1 <input id="local-j1" type="file" accept=".csv,text/csv" disabled></label>
         <label>Deck da IA · J2 <input id="local-j2" type="file" accept=".csv,text/csv" disabled></label>
