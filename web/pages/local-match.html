@@ -3,12 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Ascend · Humano × IA (pré-combate local)</title>
+  <title>Ascend · Humano × IA (combate SRD incremental)</title>
   <link rel="stylesheet" href="./styles.css">
   <link rel="stylesheet" href="./pages.css">
   <link rel="stylesheet" href="./local-match.css">
   <script src="./decks-core.js" defer></script>
   <script src="./zones-core.js" defer></script>
+  <script src="./combat-srd-subset.js" defer></script>
   <script src="./local-match-core.js" defer></script>
   <script src="./local-match.js" defer></script>
 </head>
@@ -21,7 +22,7 @@
     <section class="intro">
       <p class="section-kicker">SESSÃO LOCAL · ETAPAS DE PREPARAÇÃO</p>
       <h2>Prepare o campo contra a IA</h2>
-      <p>Importe dois decks de 40 cópias do Catálogo SRD. O humano controla J1; o adversário J2 escolhe ações legais automaticamente. A fase de combate ainda está bloqueada até integração do motor SRD.</p>
+      <p>Importe dois decks de 40 cópias do Catálogo SRD. O humano controla J1; o adversário J2 escolhe ações legais automaticamente. O primeiro combate automatizado cobre exclusivamente Cat (AT-009) e Owl (AT-010) com fichas verificadas. Outras criaturas permanecem pendentes.</p>
       <p><a href="./index.html">← Voltar à demonstração</a> · <a href="./fixture-lab.html">Laboratório sintético independente</a></p>
       <div class="notice"><span aria-hidden="true">ⓘ</span><span>O jogo salva um checkpoint local sem autenticação. Mão e monte da IA ficam ocultos na interface, <strong>não criptografados contra inspeção técnica</strong>. Sorteios locais não são auditáveis por terceiros. A importação valida identidade do catálogo, mas não comprova posse nem todas as fichas. Nenhuma criatura fictícia é promovida ao catálogo.</span></div>
       <p id="local-status" role="status" aria-live="polite">Carregando catálogo…</p>
@@ -51,6 +52,9 @@
       <div id="local-hand" class="local-hand"><p>Inicie uma sessão.</p></div>
       <p class="muted" id="local-selection">Nenhuma carta selecionada.</p>
       <div class="local-actions">
+        <button id="local-start-combat" disabled>Rolar iniciativa SRD (Cat/Owl)</button>
+        <button id="local-attack" disabled>Atacar criatura adversária</button>
+        <button id="local-next-cycle" disabled>Abrir próximo ciclo</button>
         <button id="local-exchange" disabled>Trocar selecionadas</button>
         <button id="local-keep" disabled>Manter mão</button>
         <button id="local-play" disabled>Invocar / Evoluir</button>
@@ -64,7 +68,7 @@
       <div id="local-history" class="local-history">Sem ações.</div>
     </section>
   </main>
-  <footer>V1 parcial · não resolve ataques, magias, rolagens de combate ou vitórias até três pontos</footer>
+  <footer>V1 experimental · Cat/Owl: ataques e vitória a três pontos; demais fichas, suportes e magias ainda não integrados</footer>
 </div>
 </body>
 </html>

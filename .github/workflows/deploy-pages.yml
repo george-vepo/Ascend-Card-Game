@@ -52,6 +52,7 @@ jobs:
           cp web/pages/fixture-lab.js dist/fixture-lab.js
           cp web/pages/fixture-lab.html dist/fixture-lab.html
           cp web/pages/fixture-lab.css dist/fixture-lab.css
+          cp web/pages/combat-srd-subset.js dist/combat-srd-subset.js
           cp web/pages/local-match-core.js dist/local-match-core.js
           cp web/pages/local-match.js dist/local-match.js
           cp web/pages/local-match.html dist/local-match.html
@@ -66,6 +67,7 @@ jobs:
           test -s dist/fixture-lab.js
           test -s dist/local-match.html
           test -s dist/local-match-core.js
+          test -s dist/combat-srd-subset.js
           if grep -rE '/api/(combate|resultado)' dist; then
             echo "Site Pages nao pode depender do backend Python"
             exit 1
