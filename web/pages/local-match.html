@@ -29,13 +29,23 @@
       <p id="local-status" role="status" aria-live="polite">Carregando catálogo…</p>
     </section>
     <section id="local-setup" class="entry">
-      <div class="board-heading"><div><p class="section-kicker">PREPARAR DECKS</p><h2>Selecionar dois arquivos CSV</h2></div></div>
+      <div class="board-heading"><div><p class="section-kicker">PREPARAR DECKS</p><h2>Escolher ou montar dois decks</h2></div></div>
       <p class="muted">UTF-8; cabeçalho <code>copia_id;catalogo_id</code>, 40 linhas por deck. Nenhum embaralhamento acontece até clicar em Iniciar sessão.</p>
       <p class="muted">Também é possível experimentar com dois decks virtuais locais: 40 cópias de Cat (J1) contra 40 cópias de Owl (IA). São criaturas canônicas do catálogo, mas as cópias não representam coleção possuída.</p>
       <div class="local-actions">
         <button id="local-preset" type="button" disabled>Preparar Cat × Owl (dano fixo)</button>
         <button id="local-preset-giant" type="button" disabled>Preparar Giant Owl × Cat (dano 1d10+2)</button>
       </div>
+      <section class="local-composer" aria-labelledby="local-composer-title">
+        <h3 id="local-composer-title">Montagem visual · 40 cópias por jogador</h3>
+        <p class="muted">Escolha quantas cópias de Cat, Owl e Giant Owl usar em cada lado. Apenas estas três criaturas têm ataques integrados. A IA não vê nem altera as escolhas humanas durante a partida. As cópias virtuais não comprovam posse.</p>
+        <div class="local-board">
+          <div><h4>Humano (J1)</h4><div id="local-composer-j1" class="local-composer-cards"></div><p id="local-composer-total-j1" aria-live="polite">0/40</p></div>
+          <div><h4>IA (J2)</h4><div id="local-composer-j2" class="local-composer-cards"></div><p id="local-composer-total-j2" aria-live="polite">0/40</p></div>
+        </div>
+        <button id="local-compose" type="button" disabled>Preparar decks escolhidos (sem iniciar)</button>
+      </section>
+      <p class="muted">Alternativamente, importe dois arquivos CSV UTF-8 com IDs canônicos:</p>
       <div class="local-files">
         <label>Deck humano · J1 <input id="local-j1" type="file" accept=".csv,text/csv" disabled></label>
         <label>Deck da IA · J2 <input id="local-j2" type="file" accept=".csv,text/csv" disabled></label>

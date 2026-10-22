@@ -13,31 +13,62 @@
     CAT_OWL: Object.freeze({J1:'AT-009',J2:'AT-010'}),
     GIANT_OWL_CAT: Object.freeze({J1:'AT-023',J2:'AT-009'})
   });
-  function csv(side, catalogId) {
+  function csv(side, ids) {
     return '\uFEFFcopia_id;catalogo_id\r\n' +
-      Array.from({length:40}, (_,i)=>
-        side+'-C'+String(i+1).padStart(2,'0')+';'+catalogId).join('\r\n')+'\r\n';
+      ids.map((catalogId, i) =>
+        side + '-C' + String(i + 1).padStart(2, '0') + ';' + catalogId)
+        .join('\r\n') + '\r\n';
   }
-  function create(catalog, preset = 'CAT_OWL') {
+  // Composição de DECKS VIRTUAIS (não coleção). O Catálogo SRD é a fonte
+  // única: somente as fichas que o combate incremental suporta podem entrar.
+  function compose(catalog, distribution) {
     if (!importer || !combat || !(catalog instanceof Map))
       fail('Carregue o catálogo verificado antes de criar decks virtuais.');
+    if (!distribution || typeof distribution !== 'object' ||
+        Array.isArray(distribution) ||
+        Object.keys(distribution).sort().join(',') !== 'J1,J2')
+      fail('Informe a distribuição J1/J2 de ambos os decks.');
+    const prepared = {};
+    for (const side of ['J1','J2']) {
+      const selected = distribution[side];
+      if (!selected || typeof selected !== 'object' || Array.isArray(selected))
+        fail('Distribuição inválida do jogador ' + side + '.');
+      const ids = [];
+      for (const [id, count] of Object.entries(selected)) {
+        if (!Object.hasOwn(combat.PROFILES, id))
+          fail('PENDENTE: criatura fora do subconjunto de combate SRD: ' + id);
+        if (!Number.isSafeInteger(count) || count < 0 || count > 40)
+          fail('Quantidade inválida de cópias de ' + id + '.');
+        if (count === 0) continue;
+        const entry = catalog.get(id);
+        if (!entry) fail('Criatura canônica ausente do Catálogo SRD: ' + id);
+        combat.profile({
+          catalogoId: entry.id, nome: entry.nome, tipo: entry.tipo,
+          nd: entry.nd, raridade: entry.raridade, ca: entry.ca, pvMax: entry.pvMax
+        });
+        for (let i=0; i<count; i++) ids.push(id);
+      }
+      if (ids.length !== 40)
+        fail(side + ': deck virtual exige exatamente 40 cópias; recebeu ' + ids.length + '.');
+      prepared[side] = csv(side, ids);
+    }
+    const human = importer.importDeck(prepared.J1, catalog, 'J1');
+    const ai = importer.importDeck(prepared.J2, catalog, 'J2', human);
+    if (human.length !== 40 || ai.length !== 40)
+      fail('Integridade dos 80 IDs de cópia não confirmada.');
+    return Object.freeze({
+      J1: prepared.J1, J2: prepared.J2,
+      preset: 'PERSONALIZADO', modo: 'DECKS_VIRTUAIS_LOCAL_SEM_POSSE'
+    });
+  }
+  function create(catalog, preset = 'CAT_OWL') {
     const species = PRESETS[preset];
     if (!Object.hasOwn(PRESETS, preset) || !species)
       fail('Preset desconhecido: não criar criaturas artificiais.');
-    for (const side of ['J1','J2']) {
-      const entry = catalog.get(species[side]);
-      if (!entry) fail('Criatura canônica do preset ausente do Catálogo SRD: '+species[side]);
-      combat.profile({
-        catalogoId: entry.id, nome: entry.nome, tipo: entry.tipo,
-        nd: entry.nd, raridade: entry.raridade, ca: entry.ca, pvMax: entry.pvMax
-      });
-    }
-    const J1=csv('J1',species.J1), J2=csv('J2',species.J2);
-    const human=importer.importDeck(J1,catalog,'J1');
-    const ai=importer.importDeck(J2,catalog,'J2',human);
-    if (human.length!==40 || ai.length!==40)
-      fail('Falha de integridade do preset Cat/Owl.');
-    return Object.freeze({J1,J2,preset,modo:'DECKS_VIRTUAIS_LOCAL_SEM_POSSE'});
+    const generated = compose(catalog, {
+      J1: {[species.J1]: 40}, J2: {[species.J2]: 40}
+    });
+    return Object.freeze({...generated, preset});
   }
-  return { create };
+  return { create, compose };
 });

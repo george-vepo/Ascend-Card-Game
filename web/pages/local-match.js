@@ -8,6 +8,81 @@
   let catalog = null, state = null, invalidSave = false;
   const csv = { J1: null, J2: null };
   const selected = new Set();
+  const COMPOSER_IDS = ['AT-009','AT-010','AT-023'];
+  const allocation = {J1:{},J2:{}};
+  for (const side of ['J1','J2'])
+    for (const id of COMPOSER_IDS) allocation[side][id]=0;
+  function total(side) {
+    return COMPOSER_IDS.reduce((sum,id)=>sum+allocation[side][id],0);
+  }
+  function updateComposer() {
+    for(const side of ['J1','J2'])
+      $('local-composer-total-'+side.toLowerCase()).textContent =
+        'Cópias selecionadas: '+total(side)+'/40';
+    $('local-compose').disabled =
+      !catalog || !!state || invalidSave ||
+      total('J1')!==40 || total('J2')!==40;
+  }
+  function setComposerPreset(kind) {
+    const species = kind === 'GIANT_OWL_CAT' ?
+      {J1:'AT-023',J2:'AT-009'} : {J1:'AT-009',J2:'AT-010'};
+    for(const side of ['J1','J2']) for(const id of COMPOSER_IDS) {
+      const count=id===species[side]?40:0;
+      allocation[side][id]=count;
+      const input=$('local-composer-'+side+'-'+id);
+      if(input) input.value=String(count);
+    }
+    updateComposer();
+  }
+  function buildComposer() {
+    for(const side of ['J1','J2']) {
+      const container=$('local-composer-'+side.toLowerCase());
+      container.replaceChildren();
+      for(const id of COMPOSER_IDS) {
+        const card=catalog.get(id);
+        if (!card) throw new Error('Criatura do editor ausente do catálogo: '+id);
+        window.SRDCombatSubset.profile({catalogoId:card.id,nome:card.nome,tipo:card.tipo,
+          nd:card.nd,raridade:card.raridade,ca:card.ca,pvMax:card.pvMax});
+        const root=document.createElement('div');
+        root.className='local-composer-card';
+        if(card.imagem) {
+          const img=document.createElement('img');
+          img.src=card.imagem;
+          img.alt='Ilustração de referência (web): '+card.nome;
+          img.referrerPolicy='no-referrer';
+          img.addEventListener('error',()=>img.remove(),{once:true});
+          root.append(img);
+        } else {
+          const fallback=document.createElement('div');
+          fallback.className='no-art';
+          fallback.textContent='Sem arte verificada';
+          root.append(fallback);
+        }
+        const desc=document.createElement('div');
+        const name=document.createElement('strong'),info=document.createElement('small');
+        name.textContent=card.nome;
+        info.textContent=card.tipo+' · ND '+card.nd+' · '+card.raridade+
+          ' · CA '+card.ca+' · PV '+card.pvMax;
+        const label=document.createElement('label'),input=document.createElement('input');
+        label.textContent='Cópias:';
+        input.type='number';input.min='0';input.max='40';input.step='1';input.value='0';
+        input.id='local-composer-'+side+'-'+id;
+        input.addEventListener('change',()=>{
+          const n=Number(input.value);
+          if(!Number.isSafeInteger(n)||n<0||n>40) {
+            input.value=String(allocation[side][id]);
+            status('Quantidade inválida: informe um inteiro de 0 a 40.');
+            return;
+          }
+          allocation[side][id]=n;
+          updateComposer();
+        });
+        label.append(input);desc.append(name,info,label);root.append(desc);
+        container.append(root);
+      }
+    }
+    updateComposer();
+  }
   const status = message => { $('local-status').textContent = message; };
   const newId = () => 'H_' + crypto.randomUUID().replace(/-/g, '');
   function fieldNode(card) {
@@ -110,6 +185,7 @@
     $('local-start').disabled = !(catalog && csv.J1 && csv.J2 && !state && !invalidSave);
     $('local-preset').disabled = !(catalog && !state && !invalidSave);
     $('local-preset-giant').disabled = !(catalog && !state && !invalidSave);
+    updateComposer();
   }
   function persist(next) {
     api.check(next);
@@ -153,6 +229,7 @@
     try {
       localStorage.removeItem(KEY);
       state = null; invalidSave = false; selected.clear();
+      if (catalog) buildComposer();
       status('Sessão local apagada; nenhum deck foi embaralhado.');
       render();
     } catch (error) { status('Não foi possível apagar: '+error.message); }
@@ -178,6 +255,7 @@
       const generated = presets.create(catalog, kind);
       csv.J1 = generated.J1;
       csv.J2 = generated.J2;
+      setComposerPreset(kind);
       $('local-deck-status').textContent = kind === 'GIANT_OWL_CAT' ?
         'Decks virtuais preparados: 40 Giant Owl (humano) × 40 Cat (IA).' :
         'Decks virtuais preparados: 40 Cat (humano) × 40 Owl (IA).';
@@ -189,6 +267,16 @@
   }
   $('local-preset').addEventListener('click',()=>choosePreset('CAT_OWL'));
   $('local-preset-giant').addEventListener('click',()=>choosePreset('GIANT_OWL_CAT'));
+  $('local-compose').addEventListener('click',()=>{
+    try {
+      const plan=presets.compose(catalog,allocation);
+      csv.J1=plan.J1;csv.J2=plan.J2;
+      $('local-deck-status').textContent='Composição validada: 40/40 para humano e IA. '+
+        'Cópias virtuais SEM comprovação de posse. A partida NÃO foi iniciada.';
+      status('Decks escolhidos; clique em Iniciar sessão para começar.');
+    } catch(error) { status('Montagem rejeitada: '+error.message); }
+    render();
+  });
   $('local-start').addEventListener('click',()=>{
     act(()=>api.start(catalog,csv.J1,csv.J2));
   });
@@ -211,6 +299,7 @@
   (async()=>{
     try {
       catalog=await importer.loadCatalog();
+      if(!state && !invalidSave) buildComposer();
       for(const side of ['j1','j2']) $('local-'+side).disabled=!!state;
       if (!invalidSave) status(state ?
         'Partida local recuperada sem alterar cartas, ordem ou versão.' :

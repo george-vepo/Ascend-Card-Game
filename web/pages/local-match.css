@@ -16,3 +16,17 @@
 .local-history { display:grid; gap:.4rem; max-height:320px; overflow:auto; }
 .local-history p { border-bottom:1px solid #78849b; padding:.4rem 0; margin:0; overflow-wrap:anywhere; }
 @media(max-width:640px) { .local-board { grid-template-columns:1fr; } .local-hand button { flex-basis:42%; min-width:135px; } }
+
+.local-composer { margin:1.2rem 0; padding:1rem; border:1px solid #8790a0; border-radius:14px; }
+.local-composer h4 { margin:.3rem 0 .8rem; }
+.local-composer-cards { display:grid; gap:.7rem; }
+.local-composer-card { display:grid; grid-template-columns:74px minmax(0,1fr); gap:.8rem;
+  border:1px solid #8790a0; padding:.7rem; border-radius:12px; align-items:center; }
+.local-composer-card img { width:74px; height:90px; object-fit:contain; border-radius:8px; }
+.local-composer-card .no-art { font-size:.8rem; color:inherit; }
+.local-composer-card strong,.local-composer-card small { display:block; overflow-wrap:anywhere; }
+.local-composer-card label { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; margin-top:.4rem; }
+.local-composer-card input { width:5rem; padding:.3rem; color:inherit; background:transparent; border:1px solid #8790a0; border-radius:5px; }
+.local-composer button:disabled { opacity:.5; cursor:not-allowed; }
+@media(max-width:640px) { .local-composer-card { grid-template-columns:56px minmax(0,1fr); }
+  .local-composer-card img { width:56px; height:78px; } }
