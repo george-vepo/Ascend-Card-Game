@@ -1,0 +1,18 @@
+.local-board { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; margin:1rem 0; }
+.local-fighter { min-width:0; border:1px solid #6b7589; border-radius:16px; padding:1rem; }
+.local-card { padding:.8rem; border:1px solid #8790a0; border-radius:14px; min-height:10rem; }
+.local-card img,.local-hand img { display:block; max-width:100%; height:140px; object-fit:contain; margin:.5rem auto; border-radius:10px; }
+.local-fighter p,.local-hand p { overflow-wrap:anywhere; }
+.local-hand { display:flex; gap:.8rem; flex-wrap:wrap; padding:.5rem 0; }
+.local-hand button { flex:1 1 160px; max-width:230px; min-width:145px; min-height:160px; padding:.8rem;
+  text-align:left; border:2px solid #8190a8; border-radius:12px; background:transparent; color:inherit; cursor:pointer; }
+.local-hand button[aria-pressed="true"] { outline:3px solid #e6b44c; outline-offset:2px; }
+.local-hand strong { display:block; }
+.local-hand small { display:block; line-height:1.5; }
+.local-actions,.local-files { display:flex; flex-wrap:wrap; gap:.7rem; align-items:center; margin:1rem 0; }
+.local-files label { display:grid; gap:.4rem; }
+.local-actions button { padding:.75rem .9rem; cursor:pointer; }
+.local-actions button:disabled { cursor:not-allowed; opacity:.5; }
+.local-history { display:grid; gap:.4rem; max-height:320px; overflow:auto; }
+.local-history p { border-bottom:1px solid #78849b; padding:.4rem 0; margin:0; overflow-wrap:anywhere; }
+@media(max-width:640px) { .local-board { grid-template-columns:1fr; } .local-hand button { flex-basis:42%; min-width:135px; } }

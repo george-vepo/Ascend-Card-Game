@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Ascend · Humano × IA (pré-combate local)</title>
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./pages.css">
+  <link rel="stylesheet" href="./local-match.css">
+  <script src="./decks-core.js" defer></script>
+  <script src="./zones-core.js" defer></script>
+  <script src="./local-match-core.js" defer></script>
+  <script src="./local-match.js" defer></script>
+</head>
+<body>
+<div class="page">
+  <header class="topbar"><div class="brand"><div class="brand-icon" aria-hidden="true">⚔</div>
+  <div><p class="eyebrow">ASCEND CARD GAME</p><h1>Humano × IA</h1></div></div>
+  <span class="environment">V1 EM CONSTRUÇÃO · LOCAL</span></header>
+  <main>
+    <section class="intro">
+      <p class="section-kicker">SESSÃO LOCAL · ETAPAS DE PREPARAÇÃO</p>
+      <h2>Prepare o campo contra a IA</h2>
+      <p>Importe dois decks de 40 cópias do Catálogo SRD. O humano controla J1; o adversário J2 escolhe ações legais automaticamente. A fase de combate ainda está bloqueada até integração do motor SRD.</p>
+      <p><a href="./index.html">← Voltar à demonstração</a> · <a href="./fixture-lab.html">Laboratório sintético independente</a></p>
+      <div class="notice"><span aria-hidden="true">ⓘ</span><span>O jogo salva um checkpoint local sem autenticação. Mão e monte da IA ficam ocultos na interface, <strong>não criptografados contra inspeção técnica</strong>. Sorteios locais não são auditáveis por terceiros. A importação valida identidade do catálogo, mas não comprova posse nem todas as fichas. Nenhuma criatura fictícia é promovida ao catálogo.</span></div>
+      <p id="local-status" role="status" aria-live="polite">Carregando catálogo…</p>
+    </section>
+    <section id="local-setup" class="entry">
+      <div class="board-heading"><div><p class="section-kicker">PREPARAR DECKS</p><h2>Selecionar dois arquivos CSV</h2></div></div>
+      <p class="muted">UTF-8; cabeçalho <code>copia_id;catalogo_id</code>, 40 linhas por deck. Nenhum embaralhamento acontece até clicar em Iniciar sessão.</p>
+      <div class="local-files">
+        <label>Deck humano · J1 <input id="local-j1" type="file" accept=".csv,text/csv" disabled></label>
+        <label>Deck da IA · J2 <input id="local-j2" type="file" accept=".csv,text/csv" disabled></label>
+      </div>
+      <p id="local-deck-status">Selecione arquivos para os dois lados.</p>
+      <button id="local-start" type="button" disabled>Iniciar sessão humano × IA</button>
+    </section>
+    <section class="board" aria-labelledby="local-board-title">
+      <div class="board-heading"><div><p class="section-kicker">MESA · ESTADO LOCAL</p><h2 id="local-board-title">Campo de jogo</h2></div>
+        <span id="local-phase">Sem sessão</span></div>
+      <div class="score"><div><span class="side-name">HUMANO</span><strong id="local-score-j1">0</strong></div><div class="score-divider">×</div><div><span class="side-name">IA</span><strong id="local-score-j2">0</strong></div></div>
+      <div class="local-board">
+        <article class="local-fighter"><p class="section-kicker">J1 · SEU CAMPO</p><div id="local-field-j1" class="local-card">Vazio</div><p id="local-count-j1">Monte — · Mão — · Cemitério —</p></article>
+        <article class="local-fighter"><p class="section-kicker">J2 · CAMPO DA IA</p><div id="local-field-j2" class="local-card">Vazio</div><p id="local-count-j2">Monte — · Mão oculta — · Cemitério —</p></article>
+      </div>
+      <p id="local-turn">Aguardando decks</p>
+    </section>
+    <section class="entry">
+      <div class="board-heading"><div><p class="section-kicker">MÃO DO HUMANO</p><h2>Escolha suas cartas</h2></div><span id="local-version">—</span></div>
+      <div id="local-hand" class="local-hand"><p>Inicie uma sessão.</p></div>
+      <p class="muted" id="local-selection">Nenhuma carta selecionada.</p>
+      <div class="local-actions">
+        <button id="local-exchange" disabled>Trocar selecionadas</button>
+        <button id="local-keep" disabled>Manter mão</button>
+        <button id="local-play" disabled>Invocar / Evoluir</button>
+        <button id="local-finish" disabled>Concluir criaturas</button>
+        <button id="local-pass" disabled>Sem suporte</button>
+      </div>
+    </section>
+    <section class="board">
+      <div class="board-heading"><div><p class="section-kicker">REGISTRO LOCAL</p><h2>Histórico</h2></div>
+        <button type="button" id="local-reset" class="text-button">Apagar sessão local</button></div>
+      <div id="local-history" class="local-history">Sem ações.</div>
+    </section>
+  </main>
+  <footer>V1 parcial · não resolve ataques, magias, rolagens de combate ou vitórias até três pontos</footer>
+</div>
+</body>
+</html>
