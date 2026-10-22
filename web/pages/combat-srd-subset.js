@@ -42,14 +42,14 @@
         'e Giant Owl (AT-023) com fichas exatas.');
     return expected;
   }
-  function die(faces, rng) {
+  function rollDie(faces, rng) {
     if (typeof rng !== 'function') fail('Sorteador inválido.');
     const n = rng(faces);
     if (!Number.isSafeInteger(n) || n < 0 || n >= faces)
       fail('Sorteador d' + faces + ' produziu valor inválido.');
     return n + 1;
   }
-  const d20 = rng => die(20, rng);
+  const d20 = rng => rollDie(20, rng);
   function initiative(cardJ1, cardJ2, rng) {
     const a = profile(cardJ1), b = profile(cardJ2);
     const d1 = d20(rng), d2 = d20(rng);
@@ -74,7 +74,7 @@
     if (hit && a.dadosDano) {
       const [count, faces] = a.dadosDano;
       for (let i = 0; i < count * (critical ? 2 : 1); i++)
-        damageDice.push(die(faces, rng));
+        damageDice.push(rollDie(faces, rng));
     }
     // Critical Hits: duplicar apenas o número de dados, não o modificador.
     // Cat/Owl usam dano fixo 1 e NÃO têm dados a duplicar.
