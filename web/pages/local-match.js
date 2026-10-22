@@ -154,7 +154,15 @@
   });
   try {
     const raw=localStorage.getItem(KEY);
-    if (raw) state=api.check(JSON.parse(raw));
+    if (raw) {
+      state=api.check(JSON.parse(raw));
+      // Retoma uma decisão da IA pendente mesmo se a aba fechou entre
+      // persistir a ação humana e terminar a sequência automática.
+      if (state.vez === 'J2') {
+        try { runAI(); }
+        catch (error) { status('IA aguardando resolução: ' + error.message); }
+      }
+    }
   } catch(error) {
     invalidSave=true;
     status('Checkpoint local incompatível. Use Apagar sessão local para recuperar: '+error.message);
