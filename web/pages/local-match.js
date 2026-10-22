@@ -44,7 +44,19 @@
     }
     $('local-turn').textContent = !view ? 'Aguardando decks' :
       view.fase === 'COMBATE_PENDENTE' ?
-        'COMBATE PENDENTE: motor SRD e habilidades ainda não conectados. Nenhuma vitória pode ser atribuída.' :
+        'Pronto para iniciativa: apenas Cat (AT-009) × Owl (AT-010), ou cópias dessas fichas verificadas. Outras criaturas: PENDENTE.' :
+      view.fase === 'INICIATIVA_EMPATE_PENDENTE' ?
+        'EMPATE NA INICIATIVA: rolagens registradas e combate bloqueado até regra aprovada. Não é permitido repetir a rolagem.' :
+      view.fase === 'COMBATE' ?
+        'Combate SRD parcial · Rodada ' + view.combate.rodada +
+        ' · Vez de ' + (view.vez === 'J1' ? 'você' : 'IA') +
+        ' · Iniciativa J1 ' + view.combate.iniciativas.J1.total +
+        ' × J2 ' + view.combate.iniciativas.J2.total :
+      view.fase === 'INICIO_CICLO_PENDENTE' ?
+        'KO confirmado · novo ciclo liberado, com saque até 5 para ambos.' :
+      view.fase === 'ENCERRADA' ?
+        'Duelo encerrado: ' + (view.placar.J1 === 3 ? 'humano venceu' : 'IA venceu') +
+        ' com 3 pontos. Nenhuma nova compra autorizada.' :
         'Etapa ' + view.fase + ' · Vez de ' + (view.vez === 'J1' ? 'você' : 'IA') +
         ' · Preparação primeiro: ' + view.primeiro;
     const hand = $('local-hand');
@@ -77,6 +89,9 @@
     if (!view) hand.textContent = 'Inicie uma sessão local.';
     $('local-selection').textContent = selected.size + ' carta(s) selecionada(s)';
     const human = view?.vez === 'J1';
+    $('local-start-combat').disabled = view?.fase !== 'COMBATE_PENDENTE';
+    $('local-attack').disabled = !(human && view.fase === 'COMBATE');
+    $('local-next-cycle').disabled = view?.fase !== 'INICIO_CICLO_PENDENTE';
     $('local-exchange').disabled = !(human && view.fase==='TROCA');
     $('local-keep').disabled = !(human && view.fase==='TROCA');
     $('local-play').disabled = !(human && view.fase==='CRIATURA' && selected.size===1);
@@ -124,6 +139,12 @@
     act(()=>api.finishCreature(state,'J1',state.versao,newId())));
   $('local-pass').addEventListener('click', ()=>
     act(()=>api.noSupport(state,'J1',state.versao,newId())));
+  $('local-start-combat').addEventListener('click', ()=>
+    act(()=>api.beginCombat(state,state.versao,newId())));
+  $('local-attack').addEventListener('click', ()=>
+    act(()=>api.attack(state,'J1',state.versao,newId())));
+  $('local-next-cycle').addEventListener('click', ()=>
+    act(()=>api.beginCycle(state,state.versao,newId())));
   $('local-reset').addEventListener('click',()=>{
     if (!window.confirm('Apagar a sessão local e todo o histórico?')) return;
     try {
