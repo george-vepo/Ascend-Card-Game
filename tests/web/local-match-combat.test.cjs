@@ -121,3 +121,17 @@ test('projeção pública do combate não vaza mão/ordem J2',()=>{
   assert.equal(JSON.stringify(pub).includes('J2-C40'),false);
   assert.equal(pub.combate.cobertura,'SRD521_CAT_OWL_DANO_FIXO');
 });
+
+test('empate é evento auditado e não permite rerrolagem automática',()=>{
+  const s=prepare(start());
+  const rolls=[0,1], next=game.beginCombat(s,s.versao,id(s),()=>rolls.shift());
+  assert.equal(next.fase,'INICIATIVA_EMPATE_PENDENTE');
+  assert.equal(next.vez,null);
+  assert.equal(next.combate.iniciativas.J1.total,3);
+  assert.equal(next.combate.iniciativas.J2.total,3);
+  assert.match(next.historico.at(-1).detalhe,/EMPATE: pendente/);
+  assert.throws(()=>game.beginCombat(next,next.versao,'RETRY',()=>19),/iniciativa só ocorre/);
+  assert.throws(()=>game.aiStep(next),/fora da própria vez/);
+  assert.throws(()=>game.attack(next,'J1',next.versao,'HIT',()=>19),/fora da fase/);
+  assert.equal(game.check(next),next);
+});

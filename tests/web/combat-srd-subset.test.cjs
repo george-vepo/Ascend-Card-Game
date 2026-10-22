@@ -22,7 +22,11 @@ test('iniciativa depende do d20 e atributo de cada ficha, independente da ordem 
 });
 test('empate de iniciativa fica pendente; não aplica prioridade da preparação',()=>{
   const seq=[0,1];
-  assert.throws(()=>sr.initiative(cat,owl,()=>seq.shift()),/PENDENTE.*empate/);
+  const tie=sr.initiative(cat,owl,()=>seq.shift());
+  assert.equal(tie.empate,true);
+  assert.equal(tie.ordem,null);
+  assert.equal(tie.valores.J1.total,3);
+  assert.equal(tie.valores.J2.total,3);
 });
 test('20 natural é crítico mas Scratch fixo não dobra; 1 natural erra',()=>{
   const crit=sr.attack(cat,owl,()=>19);

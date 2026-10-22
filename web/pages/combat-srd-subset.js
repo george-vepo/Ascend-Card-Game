@@ -47,9 +47,10 @@
     // O contrato ainda não define arbitragem automática do empate de iniciativa
     // humano x IA. Não introduzir "prioridade fixa" como desempate por palpite.
     if (values.J1.total === values.J2.total)
-      fail('PENDENTE: empate de iniciativa; política de desempate não aprovada.');
+      return { valores: values, empate: true, ordem: null };
     const first = values.J1.total > values.J2.total ? 'J1' : 'J2';
-    return { valores: values, ordem: [first, first === 'J1' ? 'J2' : 'J1'] };
+    return { valores: values, empate: false,
+      ordem: [first, first === 'J1' ? 'J2' : 'J1'] };
   }
   function attack(attacker, defender, rng) {
     const a = profile(attacker), target = profile(defender);

@@ -13,7 +13,7 @@
   const RARITIES = ['Comum', 'Incomum', 'Rara', 'Lendária', 'Mítica'];
   const MODE = 'PARTIDA_LOCAL_HUMANO_IA_V1';
   const PHASES = ['TROCA', 'CRIATURA', 'SUPORTE', 'COMBATE_PENDENTE',
-    'COMBATE', 'INICIO_CICLO_PENDENTE', 'ENCERRADA'];
+    'INICIATIVA_EMPATE_PENDENTE', 'COMBATE', 'INICIO_CICLO_PENDENTE', 'ENCERRADA'];
   const clone = data => JSON.parse(JSON.stringify(data));
   const fail = message => { throw new Error(message); };
   const other = side => side === 'J1' ? 'J2' : 'J1';
@@ -34,7 +34,8 @@
           state.placar[s] < 0 || state.placar[s] > 3) ||
         (state.placar.J1 === 3 && state.placar.J2 === 3))
       fail('Checkpoint local incompatível ou corrompido.');
-    const pending = ['COMBATE_PENDENTE', 'INICIO_CICLO_PENDENTE', 'ENCERRADA'];
+    const pending = ['COMBATE_PENDENTE', 'INICIATIVA_EMPATE_PENDENTE',
+      'INICIO_CICLO_PENDENTE', 'ENCERRADA'];
     if (pending.includes(state.fase) && state.vez !== null)
       fail('Fase sem turno jogável não deve possuir ator.');
     if (!pending.includes(state.fase) && !SIDES.includes(state.vez))
@@ -56,9 +57,14 @@
       combat.profile(state.jogadores.J1.campo);
       combat.profile(state.jogadores.J2.campo);
     }
-    if (state.fase === 'COMBATE_PENDENTE' &&
+    if (['COMBATE_PENDENTE', 'INICIATIVA_EMPATE_PENDENTE'].includes(state.fase) &&
         (!state.jogadores.J1.campo || !state.jogadores.J2.campo))
       fail('Combate pendente exige duas criaturas ativas.');
+    if (state.fase === 'INICIATIVA_EMPATE_PENDENTE' &&
+        (!state.combate || state.combate.ordem !== null ||
+         state.combate.indice !== null || state.combate.iniciativas?.J1?.total !==
+         state.combate.iniciativas?.J2?.total))
+      fail('Empate pendente exige rolagens de iniciativa iguais e registradas.');
     if (['INICIO_CICLO_PENDENTE', 'ENCERRADA'].includes(state.fase) &&
         Number(Boolean(state.jogadores.J1.campo)) +
         Number(Boolean(state.jogadores.J2.campo)) !== 1)
@@ -224,19 +230,23 @@
     if (!combat) fail('Motor SRD parcial indisponível.');
     const order = combat.initiative(
       state.jogadores.J1.campo, state.jogadores.J2.campo, rng);
-    return commit(state, id, 'INICIATIVA_SRD_PARCIAL', null,
+    return commit(state, id,
+      order.empate ? 'INICIATIVA_EMPATE_PENDENTE' : 'INICIATIVA_SRD_PARCIAL',
+      null,
       'Cat/Owl · J1 d20 ' + order.valores.J1.d20 + ' + ' +
       order.valores.J1.modificador + ' = ' + order.valores.J1.total +
       '; J2 d20 ' + order.valores.J2.d20 + ' + ' +
       order.valores.J2.modificador + ' = ' + order.valores.J2.total +
+      (order.empate ? ' · EMPATE: pendente de regra, sem rerrolagem' : '') +
       ' · sorteio local não auditável externamente', next => {
         next.combate = {
-          numero: next.ciclo, rodada: 1, indice: 0,
+          numero: next.ciclo, rodada: order.empate ? 0 : 1,
+          indice: order.empate ? null : 0,
           ordem: order.ordem, iniciativas: order.valores,
           cobertura: 'SRD521_CAT_OWL_DANO_FIXO'
         };
-        next.fase = 'COMBATE';
-        next.vez = order.ordem[0];
+        next.fase = order.empate ? 'INICIATIVA_EMPATE_PENDENTE' : 'COMBATE';
+        next.vez = order.empate ? null : order.ordem[0];
       });
   }
 

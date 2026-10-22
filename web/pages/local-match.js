@@ -45,6 +45,8 @@
     $('local-turn').textContent = !view ? 'Aguardando decks' :
       view.fase === 'COMBATE_PENDENTE' ?
         'Pronto para iniciativa: apenas Cat (AT-009) × Owl (AT-010), ou cópias dessas fichas verificadas. Outras criaturas: PENDENTE.' :
+      view.fase === 'INICIATIVA_EMPATE_PENDENTE' ?
+        'EMPATE NA INICIATIVA: rolagens registradas e combate bloqueado até regra aprovada. Não é permitido repetir a rolagem.' :
       view.fase === 'COMBATE' ?
         'Combate SRD parcial · Rodada ' + view.combate.rodada +
         ' · Vez de ' + (view.vez === 'J1' ? 'você' : 'IA') +
