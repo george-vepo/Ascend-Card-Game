@@ -229,6 +229,7 @@
     try {
       localStorage.removeItem(KEY);
       state = null; invalidSave = false; selected.clear();
+      if (catalog) buildComposer();
       status('Sessão local apagada; nenhum deck foi embaralhado.');
       render();
     } catch (error) { status('Não foi possível apagar: '+error.message); }
