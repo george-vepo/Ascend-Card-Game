@@ -217,7 +217,7 @@
     });
   }
 
-  // Somente Cat/Owl (fichas SRD 5.2.1 verificadas) podem avançar
+  // Somente Cat/Owl/Giant Owl (fichas SRD 5.2.1 verificadas) podem avançar
   // do estado de preparação para o combate; demais perfis ficam pendentes.
   function beginCombat(state, expectedVersion, id, rng = randomIndex) {
     check(state);
@@ -233,7 +233,7 @@
     return commit(state, id,
       order.empate ? 'INICIATIVA_EMPATE_PENDENTE' : 'INICIATIVA_SRD_PARCIAL',
       null,
-      'Cat/Owl · J1 d20 ' + order.valores.J1.d20 + ' + ' +
+      'Perfis SRD parciais · J1 d20 ' + order.valores.J1.d20 + ' + ' +
       order.valores.J1.modificador + ' = ' + order.valores.J1.total +
       '; J2 d20 ' + order.valores.J2.d20 + ' + ' +
       order.valores.J2.modificador + ' = ' + order.valores.J2.total +
@@ -243,7 +243,7 @@
           numero: next.ciclo, rodada: order.empate ? 0 : 1,
           indice: order.empate ? null : 0,
           ordem: order.ordem, iniciativas: order.valores,
-          cobertura: 'SRD521_CAT_OWL_DANO_FIXO'
+          cobertura: 'SRD521_CAT_OWL_GIANT_OWL_ATAQUES_PARCIAIS'
         };
         next.fase = order.empate ? 'INICIATIVA_EMPATE_PENDENTE' : 'COMBATE';
         next.vez = order.empate ? null : order.ordem[0];
@@ -262,7 +262,11 @@
       result.bonus + ' = ' + result.total + ' vs CA ' + result.caAlvo +
       '; ' + (result.acerto ? 'acertou' : 'errou') +
       (result.critico ? ' (crítico; dano fixo)' : '') +
-      '; ' + result.dano + ' ' + result.tipoDano + ' (fixo)' +
+      '; dano ' + (result.danoComDados ?
+        result.dadosDano.join(' + ') + ' + ' + result.modificadorDano +
+        ' = ' + result.danoBruto : String(result.danoBruto) + ' fixo') +
+      ' ' + result.tipoDano + (result.resistenciaAplicada ?
+        '; resistência: ' + result.dano + ' efetivo' : '') +
       (lethal ? '; KO de ' + victim.nome + '; +1 ponto ' + side : '') +
       '; sorteio local não auditável externamente';
     return commit(state, id, 'ATAQUE_SRD_PARCIAL', side, detail, next => {

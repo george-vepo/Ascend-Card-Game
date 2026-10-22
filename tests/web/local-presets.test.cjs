@@ -42,3 +42,15 @@ test('usuário pode iniciar sessão somente após gerar CSVs, sem fixture sinté
   assert.equal(s.jogadores.J2.mao.length,5);
   assert.equal(s.modo,match.MODE);
 });
+
+test('preset secundário não modifica nem desconfigura preset padrão',()=>{
+  const source=catalog();
+  source.set('AT-023',{id:'AT-023',nome:'Giant Owl',tipo:'Celestial',nd:'1/4',
+    raridade:'Comum',ca:12,pvMax:19});
+  const before=presets.create(source);
+  const other=presets.create(source,'GIANT_OWL_CAT');
+  assert.notEqual(before.J1,other.J1);
+  assert.equal(before.preset,'CAT_OWL');
+  assert.equal(other.preset,'GIANT_OWL_CAT');
+  assert.equal(presets.create(source).J1,before.J1);
+});

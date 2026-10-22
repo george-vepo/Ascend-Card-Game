@@ -45,7 +45,7 @@
     }
     $('local-turn').textContent = !view ? 'Aguardando decks' :
       view.fase === 'COMBATE_PENDENTE' ?
-        'Pronto para iniciativa: apenas Cat (AT-009) × Owl (AT-010), ou cópias dessas fichas verificadas. Outras criaturas: PENDENTE.' :
+        'Pronto para iniciativa: somente Cat, Owl ou Giant Owl com ficha exata. Giant Owl: Talons apenas; magias não implementadas.' :
       view.fase === 'INICIATIVA_EMPATE_PENDENTE' ?
         'EMPATE NA INICIATIVA: rolagens registradas e combate bloqueado até regra aprovada. Não é permitido repetir a rolagem.' :
       view.fase === 'COMBATE' ?
@@ -109,6 +109,7 @@
     if (!view) history.textContent = 'Nenhuma ação.';
     $('local-start').disabled = !(catalog && csv.J1 && csv.J2 && !state && !invalidSave);
     $('local-preset').disabled = !(catalog && !state && !invalidSave);
+    $('local-preset-giant').disabled = !(catalog && !state && !invalidSave);
   }
   function persist(next) {
     api.check(next);
@@ -172,18 +173,22 @@
       render();
     });
   }
-  $('local-preset').addEventListener('click',()=>{
+  function choosePreset(kind) {
     try {
-      const generated = presets.create(catalog);
+      const generated = presets.create(catalog, kind);
       csv.J1 = generated.J1;
       csv.J2 = generated.J2;
-      $('local-deck-status').textContent =
-        'Decks virtuais locais prontos: 40 Cat (humano) e 40 Owl (IA). ' +
-        'Cópias válidas mas SEM comprovação de posse. A sessão NÃO foi iniciada.';
-      status('Seleção preparada. Clique em Iniciar sessão apenas se quiser jogar.');
-      render();
-    } catch(error) { status('Preset bloqueado: '+error.message);render(); }
-  });
+      $('local-deck-status').textContent = kind === 'GIANT_OWL_CAT' ?
+        'Decks virtuais preparados: 40 Giant Owl (humano) × 40 Cat (IA).' :
+        'Decks virtuais preparados: 40 Cat (humano) × 40 Owl (IA).';
+      $('local-deck-status').textContent +=
+        ' Cópias sem comprovação de posse. A partida NÃO foi iniciada.';
+      status('Decks escolhidos. Clique em Iniciar sessão para jogar.');
+    } catch(error) { status('Preset bloqueado: '+error.message); }
+    render();
+  }
+  $('local-preset').addEventListener('click',()=>choosePreset('CAT_OWL'));
+  $('local-preset-giant').addEventListener('click',()=>choosePreset('GIANT_OWL_CAT'));
   $('local-start').addEventListener('click',()=>{
     act(()=>api.start(catalog,csv.J1,csv.J2));
   });

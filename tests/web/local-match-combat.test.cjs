@@ -119,7 +119,7 @@ test('projeção pública do combate não vaza mão/ordem J2',()=>{
   assert.equal('inventario' in pub,false);
   assert.equal('mao' in pub.jogadores.J2 && Array.isArray(pub.jogadores.J2.mao),false);
   assert.equal(JSON.stringify(pub).includes('J2-C40'),false);
-  assert.equal(pub.combate.cobertura,'SRD521_CAT_OWL_DANO_FIXO');
+  assert.equal(pub.combate.cobertura,'SRD521_CAT_OWL_GIANT_OWL_ATAQUES_PARCIAIS');
 });
 
 test('empate é evento auditado e não permite rerrolagem automática',()=>{
